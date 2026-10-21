@@ -1269,7 +1269,11 @@ async function saveTerms(){
 }
 $('termsLink').addEventListener('click',function(e){e.preventDefault();$('termsOv').classList.add('on');});
 $('termsBack').addEventListener('click',function(){$('termsOv').classList.remove('on');});
-/* Inicio con Google: en la web por redirección de Supabase (la APK llegará con el plugin nativo) */
+/* Inicio con Google: apagado por ahora (Google muestra el dominio de Supabase en el selector de cuentas).
+   Para activarlo, cambia a true cuando tengas dominio propio para Supabase. */
+var GOOGLE_LOGIN=false;
+$('lgGoogle').style.display=GOOGLE_LOGIN?'':'none';
+/* Inicio con Google en la web por redirección de Supabase */
 $('lgGoogle').addEventListener('click',function(){
   if(!$('termsOk').checked){$('lgMsg').classList.add('er');$('lgMsg').style.color='';$('lgMsg').textContent='Acepta los términos y condiciones para continuar.';return;}
   var isNative=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());

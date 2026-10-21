@@ -439,7 +439,6 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
     <button id="tabCfg" class="on">Configuración</button>
     <button id="tabAdmin">Participantes</button>
     <button id="tabPick">Registrar</button>
-    <button id="tabLinks">Enlaces</button>
     <button id="tabRifas">Rifas</button>
   </div>
   <div class="note" id="pNote"></div>
@@ -640,13 +639,8 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
         <button id="v1x">Cerrar</button>
       </div>
     </div>
-  </div>
 
-  <div id="vAdmin" style="display:none">
-    <p class="sec" style="margin-top:0">Participantes</p>
-    <p class="hint" style="margin-top:0">Toca un número para ver, editar o liberar al participante.</p>
-    <p class="hint" id="st2"></p>
-    <div class="grid pg" id="g2"></div>
+    <p class="sec">Carga masiva y edición</p>
     <div class="form" id="f2">
       <p class="ttl" id="f2t"></p>
       <input class="inp" id="f2n" placeholder="Nombre completo: 2 nombres y 2 apellidos" maxlength="80" autocomplete="off">
@@ -667,15 +661,13 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
     <div class="tools">
       <button class="primary" id="tImp">Importar</button>
       <button id="tPaste">Pegar del portapapeles</button>
-      <button id="tExp">Exportar CSV</button>
     </div>
     <div class="tools">
       <button id="tSample">Cargar datos de ejemplo</button>
       <button id="tDel">Borrar todos</button>
     </div>
-  </div>
 
-  <div id="vLinks" style="display:none">
+  <div id="vLinks">
     <p class="sec" style="margin-top:0">Vista de participante</p>
     <p class="hint" style="margin-top:0">Abre el sorteo tal como lo vería una tercera persona. Cada registro genera un usuario único.</p>
     <button class="primary" id="linkBuyView" style="width:100%">ENTRAR</button>
@@ -733,6 +725,18 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
       <div id="invList"></div>
     </div>
   </div>
+  </div>
+
+  <div id="vAdmin" style="display:none">
+    <p class="sec" style="margin-top:0">Participantes</p>
+    <p class="hint" style="margin-top:0">Números asignados y disponibles. Pasa el cursor sobre un número para ver a su participante.</p>
+    <p class="hint" id="st2"></p>
+    <div id="g2wrap" style="position:relative"><div class="grid pg" id="g2"></div><div class="tip" id="g2tip"></div></div>
+    <div class="tools">
+      <button id="tExp">EXPORTAR</button>
+    </div>
+  </div>
+
 </div></div>
 
 <div class="lg" id="lg"><div class="lg-in">
@@ -2496,7 +2500,7 @@ function showMsg(id,t,cls){var e=$(id);e.textContent=t||'';e.className='msg'+(cl
 function locked(){return drawn.length>0;}
 function updateStats(){
   var t=pool().length;
-  var s='Ocupados: '+t+' · Libres: '+(DB.cfg.total-t);
+  var s='Números asignados: '+t+' · Números disponibles: '+(DB.cfg.total-t);
   $('st1').textContent=s;$('st2').textContent=s;
   var note=$('pNote');
   note.className='note'+(DB.sample?' on':'');
@@ -2507,17 +2511,42 @@ function buildPGrid(c,mode){
   for(var i=1;i<=DB.cfg.total;i++){
     var d=document.createElement('div');
     var tk=!!DB.people[i];
-    d.className='cell'+(tk?(mode==='pick'?' tkp':' tk'):'')+(selN===i?' sel':'');
+    d.className='cell'+(tk?' tk':'')+(selN===i?' sel':'');
     d.textContent=i;d.dataset.n=i;c.appendChild(d);
   }
   c.onclick=function(e){
     var el=e.target.closest('.cell');
-    if(el)pickCell(mode,parseInt(el.dataset.n,10));
+    if(!el)return;
+    var n=parseInt(el.dataset.n,10);
+    if(mode==='admin'){showG2Tip(el,n,true);return;}
+    pickCell(mode,n);
   };
+  if(mode==='admin'){
+    c.onmouseover=function(e){var el=e.target.closest('.cell');if(el)showG2Tip(el,parseInt(el.dataset.n,10),false);};
+    c.onmouseout=function(e){if(e.target.closest('.cell'))hideG2Tip();};
+  }
+}
+/* Datos del número: administrador = nombre completo; público = nombre enmascarado */
+var g2TipT=null;
+function showG2Tip(el,n,hold){
+  var t=$('g2tip'),w=$('g2wrap');
+  var p=DB.people[n];
+  t.textContent=n+' · '+(p?(adminOK?p.name:maskName(p.name)):'Libre');
+  t.style.display='block';
+  var r=el.getBoundingClientRect(),rr=w.getBoundingClientRect();
+  var tw=t.offsetWidth,th=t.offsetHeight;
+  t.style.left=Math.max(4,Math.min(rr.width-tw-4,r.left-rr.left+r.width/2-tw/2))+'px';
+  t.style.top=Math.max(4,r.top-rr.top-th-8)+'px';
+  if(g2TipT){clearTimeout(g2TipT);g2TipT=null;}
+  if(hold)g2TipT=setTimeout(hideG2Tip,2500);
+}
+function hideG2Tip(){
+  var t=$('g2tip');if(t)t.style.display='none';
+  if(g2TipT){clearTimeout(g2TipT);g2TipT=null;}
 }
 function buildPanelGrids(){
   if(pnMode==='pick')buildPGrid($('g1'),'pick');
-  else if(pnMode==='admin')buildPGrid($('g2'),'admin');
+  else if(pnMode==='admin')buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');
 }
 function renderP(){
   updateStats();
@@ -2541,13 +2570,11 @@ function setMode(m){
   $('tabCfg').classList.toggle('on',m==='cfg');
   $('tabAdmin').classList.toggle('on',m==='admin');
   $('tabPick').classList.toggle('on',m==='pick');
-  $('tabLinks').classList.toggle('on',m==='links');
   $('tabRifas').classList.toggle('on',m==='rifas');
   $('adLock').style.display=need?'':'none';
   $('vCfg').style.display=(m==='cfg'&&!need)?'':'none';
   $('vAdmin').style.display=(m==='admin'&&!need)?'':'none';
   $('vPick').style.display=(m==='pick'&&!need)?'':'none';
-  $('vLinks').style.display=(m==='links'&&!need)?'':'none';
   $('vRifas').style.display=(m==='rifas'&&!need)?'':'none';
   if(need){
     $('pinHint').textContent=DB.cfg.pin?'Esta sección es solo para el administrador. Escribe su PIN.':'Crea un PIN de administrador (mínimo 4 caracteres) para entrar.';
@@ -2565,7 +2592,7 @@ function setMode(m){
       $('colWin').value=cc.win;$('colOut').value=cc.out;$('colCell').value=cc.cell;
       updateCfgUI();
     }
-    if(m==='links')loadInvites();
+    if(m==='pick')loadInvites();
     if(m==='rifas')renderRifas();
   }
   renderP();
@@ -2578,7 +2605,7 @@ function startPoll(){
     cloudPullPeople().then(function(){
       updateStats();
       if(selN===null)buildPanelGrids();
-      if(pnMode==='links')loadInvites();
+      if(pnMode==='pick')loadInvites();
     }).catch(function(){});
   },8000);
 }
@@ -2611,8 +2638,7 @@ function syncOp(fn,mid,okMsg){
 function pickCell(mode,n){
   var mid=mode==='pick'?'m1':'m2';
   if(locked()){showMsg(mid,'Hay un sorteo en curso: no se puede editar.','er');return;}
-  if(mode==='pick'){
-    if(DB.people[n]){showMsg('m1','El número '+n+' ya está ocupado. Elige uno libre.','er');return;}
+  if(mode==='pick'&&!DB.people[n]){
     selN=n;showMsg('m1','');
     $('v1tk').style.display='none';
     $('f1t').textContent='Número elegido: '+n;
@@ -2632,7 +2658,7 @@ function pickCell(mode,n){
     $('f2free').style.display=p?'':'none';
     $('f2').classList.add('on');
     showMsg('m2','');
-    buildPGrid($('g2'),'admin');
+    buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');
     $('f2n').focus();
   }
 }
@@ -2662,7 +2688,7 @@ $('f2ok').addEventListener('click',function(){
   DB.people[n]={name:name,phone:phone,email:email,sex:px.sex,photo:px.photo};
   DB.sample=false;save();selN=null;
   $('f2').classList.remove('on');
-  buildPGrid($('g2'),'admin');updateStats();
+  buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');updateStats();
   syncOp(function(){return cloudUpsert([n]);},'m2','Guardado en el número '+n+'.');
 });
 $('f2free').addEventListener('click',function(){
@@ -2671,7 +2697,7 @@ $('f2free').addEventListener('click',function(){
   delete DB.people[n];
   DB.sample=false;save();selN=null;
   $('f2').classList.remove('on');
-  buildPGrid($('g2'),'admin');updateStats();
+  buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');updateStats();
   syncOp(function(){return cloudDelete(n);},'m2','El número '+n+' quedó libre.');
 });
 
@@ -2704,7 +2730,7 @@ $('tImp').addEventListener('click',function(){
   if(changed.length>0)DB.sample=false;
   save();selN=null;
   $('f2').classList.remove('on');
-  buildPGrid($('g2'),'admin');updateStats();
+  buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');updateStats();
   var summary='Importados: '+changed.length+(skip?' · Omitidos: '+skip:'');
   if(changed.length===0){showMsg('m2',summary,'er');return;}
   syncOp(function(){return cloudUpsert(changed);},'m2',summary);
@@ -2786,7 +2812,7 @@ $('tSample').addEventListener('click',function(){
   if(locked()){showMsg('m2','Reinicia el sorteo para cambiar participantes.','er');return;}
   fillSample();save();selN=null;
   $('f2').classList.remove('on');
-  buildPGrid($('g2'),'admin');updateStats();
+  buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');updateStats();
   showMsg('m2','Se cargaron '+DB.cfg.total+' participantes de ejemplo.','ok');
 });
 $('tDel').addEventListener('click',function(){
@@ -2800,7 +2826,7 @@ $('tDel').addEventListener('click',function(){
   clearTimeout(delTimer);b.dataset.arm='';b.textContent='Borrar todos';
   DB.people={};DB.sample=false;save();selN=null;
   $('f2').classList.remove('on');
-  buildPGrid($('g2'),'admin');updateStats();
+  buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');updateStats();
   syncOp(function(){return cloudDeleteAll();},'m2','Todos los participantes fueron borrados.');
 });
 $('rfCodeSave').addEventListener('click',function(){
@@ -2900,12 +2926,11 @@ $('tabPick').addEventListener('click',function(){setMode('pick');});
 $('tabAdmin').addEventListener('click',function(){setMode('admin');});
 $('tabCfg').addEventListener('click',function(){setMode('cfg');});
 $('tabRifas').addEventListener('click',function(){setMode('rifas');});
-$('tabLinks').addEventListener('click',function(){setMode('links');});
 $('open').addEventListener('click',openPanel);
 $('pnClose').addEventListener('click',closePanel);
 $('pnRefresh').addEventListener('click',function(){
   if(!RID)return;
-  cloudPullPeople().then(function(){renderP();if(pnMode==='links')loadInvites();}).catch(function(e){showMsg(pnMode==='pick'?'m1':'m2','No se pudo actualizar: '+e.message,'er');});
+  cloudPullPeople().then(function(){renderP();if(pnMode==='pick')loadInvites();}).catch(function(e){showMsg(pnMode==='pick'?'m1':'m2','No se pudo actualizar: '+e.message,'er');});
 });
 
 /* ---------- Comprar boleto desde la pantalla principal (vista de compra) ---------- */
@@ -2916,7 +2941,7 @@ async function buyNow(){
     TOKEN=null;
     if(adminOK&&!BUY_TOKEN){
       /* El administrador vende con enlaces de venta: se abre la pestaña para crear uno */
-      openPanel();setMode('links');
+      openPanel();setMode('pick');
       showMsg('mSale','Para dar acceso por enlace, elige cuántos números puede elegir el participante y pulsa «Crear enlace».');
       return;
     }
@@ -2945,7 +2970,7 @@ function copySaleText(t){
   catch(e){$('saleLink').select();}
 }
 function saleText(token,quota){
-  return 'Participa en la rifa «'+(DB.cfg.name||'')+'». Tu enlace de acceso: '+token+'. Debes elegir exactamente '+quota+(quota===1?' número':' números')+'. En la app toca «Tengo un código de acceso» y pega este enlace.';
+  return 'Participa en la rifa «'+(DB.cfg.name||'')+'» (código: '+(codeNow()||'—')+'). Tu enlace de acceso: '+token+'. Debes elegir exactamente '+quota+(quota===1?' número':' números')+'. En la app toca «Tengo un código de acceso» y pega este enlace.';
 }
 async function loadSales(){
   if(!CLOUD||!RID)return;
@@ -3111,7 +3136,7 @@ function afterLogin(){
 async function startAdmin(){
   if(!CLOUD){$('invSec').style.display='';$('invHint').style.display='';$('saleSec').style.display='none';loadIdx();bootRaffle();loadDB();init();return;}
   $('invSec').style.display='none';$('invHint').style.display='none';$('saleSec').style.display='';
-  $('tabLinks').style.display='';
+
   $('codeBtn').style.display='none';
   $('pinSec').style.display='none';
   $('tSample').style.display='none';

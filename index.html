@@ -513,14 +513,6 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
       <button id="totSave">Guardar cantidad</button>
     </div>
     <p class="msg" id="mTot"></p>
-    <p class="sec">Quitar un rango de números</p>
-    <p class="hint" style="margin-top:0">Libera los números desde → hasta que tengan participante. Pedirá confirmación antes de quitarlos.</p>
-    <div class="row">
-      <input class="inp" id="rdFrom" type="number" min="1" step="1" inputmode="numeric" placeholder="Desde" style="flex:1;margin:0">
-      <input class="inp" id="rdTo" type="number" min="1" step="1" inputmode="numeric" placeholder="Hasta" style="flex:1;margin:0">
-    </div>
-    <div class="row" style="margin-top:8px"><button class="danger-btn" id="rdGo">Quitar rango</button></div>
-    <p class="msg" id="mRd"></p>
 
     <p class="sec">Premios y eliminados</p>
     <div class="opts">
@@ -639,6 +631,15 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
         <button id="v1x">Cerrar</button>
       </div>
     </div>
+
+    <p class="sec">Quitar un rango de números</p>
+    <p class="hint" style="margin-top:0">Libera los números desde → hasta que tengan participante. Pedirá confirmación antes de quitarlos.</p>
+    <div class="row">
+      <input class="inp" id="rdFrom" type="number" min="1" step="1" inputmode="numeric" placeholder="Desde" style="flex:1;margin:0">
+      <input class="inp" id="rdTo" type="number" min="1" step="1" inputmode="numeric" placeholder="Hasta" style="flex:1;margin:0">
+    </div>
+    <div class="row" style="margin-top:8px"><button class="danger-btn" id="rdGo">Quitar rango</button></div>
+    <p class="msg" id="mRd"></p>
 
     <p class="sec">Carga masiva y edición</p>
     <div class="form" id="f2">

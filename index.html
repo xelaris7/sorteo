@@ -120,6 +120,9 @@ button.primary{background:var(--fill-accent);color:var(--on-accent);border-color
 /* Compra: ocupados (rojo apagado) y disponibles (verde claro) en colores distintos */
 .pg .cell.tkp{opacity:1;background:linear-gradient(180deg,#8a2f45,#5a1b2d);color:#ffd9e0;border:1px solid #c9566f;cursor:not-allowed}
 .pg .cell:not(.tkp){background:linear-gradient(180deg,#eafff5,#9fe6c4);color:#0c3b28;border:1px solid #5fcf9c;font-weight:700}
+/* PARTICIPANTES y REGISTRAR: libres en verde y ocupados/seleccionados en dorado (colores distintos) */
+#g1 .cell:not(.tk),#g2 .cell:not(.tk){background:linear-gradient(180deg,#5cf0b0,#1fb874)!important;color:#04241a!important;border:1px solid #b6ffdf!important;font-weight:700}
+#g1 .cell.tk,#g2 .cell.tk{background:linear-gradient(180deg,#ffe38a,#f0a500)!important;color:#2a1600!important;border:1px solid #fff1b8!important;font-weight:700}
 .cell.sel{outline:3px solid var(--fill-accent);outline-offset:1px;font-weight:700}
 .inp{width:100%;display:block;margin-bottom:8px}
 textarea.inp{min-height:110px;padding:10px 12px;resize:vertical}

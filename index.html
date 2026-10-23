@@ -1967,7 +1967,8 @@ async function livePoll(){
     DB.draws=sd;init();
   }
   /* La transmisión en vivo solo llega a quien compró con enlace de venta */
-  var src=info,L=null;
+  /* Quien entró solo con el código también recibe el guion en vivo (viene en raffle_by_code) */
+  var src=info,L=info.live||null;
   if(BUY_TOKEN){
     var lv=null;
     try{lv=await sbReq('POST','/rest/v1/rpc/raffle_live_by_token',{p_token:BUY_TOKEN},null,true);}catch(e){lv=null;}

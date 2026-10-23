@@ -292,6 +292,23 @@ body:not(.buyer) #exitBuyer{display:none}
   .rs-box{max-width:520px}
 }
 
+/* Configuración, Registrar y Rifas en computador: todo en horizontal, aprovechando el ancho */
+@media (min-width:900px){
+  .opts{display:flex!important;flex-wrap:wrap;align-items:center;gap:10px 22px}
+  .opts>label.chk{grid-column:auto!important}
+  .opts>label,.opts>.step,.opts>input,.opts>select{justify-self:auto!important}
+  .tools{display:flex!important;flex-wrap:wrap;gap:10px}
+  #vPick #fileIn{display:block!important}
+  #vPick .tools{display:inline-flex!important;margin:8px 12px 8px 0!important;vertical-align:top}
+  .tools>button{width:auto!important}
+  .tools.tools-c{justify-content:flex-start!important}
+  .tools.tools-c>button{width:auto!important}
+  .row.c-center{justify-content:flex-start!important}
+  .rf-acts{display:flex!important;flex-wrap:wrap;gap:10px}
+  .rf-acts>button{width:auto!important}
+  .rf-acts.three>button:last-child{grid-column:auto!important;justify-self:auto!important;width:auto!important}
+}
+
 /* ===== Tema "juego" (vista previa) ===== */
 :root{
   --bg:#120b33;--text:#fff8e7;--text2:#c7bde8;
@@ -344,6 +361,19 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
 .tabs button{background:#211a5a}
 .tabs button.on,.tabs button[aria-selected="true"]{background:linear-gradient(180deg,#ffc53d,#ff9f1c);color:#2a1300;border-color:#ffe08a}
 
+/* ===== Configuración y Registrar: textos a la izquierda, controles a la derecha; botones 2 arriba y 1 centrado abajo ===== */
+.opts{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px}
+.opts>label{justify-self:start}
+.opts>.step,.opts>input[type=color],.opts>select{justify-self:end}
+.opts>label.chk{grid-column:1 / -1;justify-self:start}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tools>button{width:100%;margin:0}
+.tools.tools-c{display:flex;justify-content:center}
+.tools.tools-c>button{width:calc(50% - 4px)}
+.row.c-center{justify-content:center}
+.rf-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.rf-acts>button{width:100%;margin:0}
+.rf-acts.three>button:last-child{grid-column:1 / -1;justify-self:center;width:calc(50% - 4px)}
 </style>
 </head>
 <body>
@@ -388,6 +418,15 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
     <input class="inp" id="codeIn" placeholder="SOL-XXXXXX o VTA-XXXXXXXXXX" maxlength="300" autocapitalize="characters" style="text-transform:uppercase">
     <p class="msg" id="mCode"></p>
     <div class="row"><button id="codeNo">Cancelar</button><button class="primary" id="codeYes">Entrar</button></div>
+  </div>
+</div>
+
+<div class="rs" id="modeOv" role="dialog" aria-modal="true" aria-labelledby="modeTitle">
+  <div class="rs-box">
+    <h3 id="modeTitle">¿Cómo quieres entrar?</h3>
+    <p>Tu cuenta sirve para los dos modos. Elige el que necesitas ahora.</p>
+    <button class="primary" id="modeAdm" style="width:100%;margin-bottom:8px">MODO ADMINISTRADOR</button>
+    <button id="modePt" style="width:100%">MODO PARTICIPANTE</button>
   </div>
 </div>
 <div class="rs" id="delOv" role="dialog" aria-modal="true">
@@ -580,7 +619,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
         <input class="inp" id="rfCode" placeholder="Ej.: AYUDA-ANA-2026" maxlength="20" autocapitalize="characters" style="flex:1;margin:0;text-transform:uppercase">
         <button class="primary" id="rfCodeSave">Guardar código</button>
       </div>
-      <div class="row" style="margin-top:8px"><button id="rfCodeAuto">Usar código automático</button></div>
+      <div class="row c-center" style="margin-top:8px"><button id="rfCodeAuto">Usar código automático</button></div>
       <p class="msg" id="mCodeSave"></p>
     </div>
 
@@ -668,7 +707,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
       <button class="primary" id="tImp">Importar</button>
       <button id="tPaste">Pegar del portapapeles</button>
     </div>
-    <div class="tools">
+    <div class="tools tools-c">
       <button id="tSample">Cargar datos de ejemplo</button>
       <button id="tDel">Borrar todos</button>
     </div>
@@ -759,7 +798,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   <button class="linkbtn" id="lgToggle" type="button" style="margin-top:8px">¿No tienes cuenta? Crear cuenta de organizador</button>
   <p class="msg er" id="lgMsg"></p>
   <hr style="border:0;border-top:1px solid var(--border,#ddd);margin:18px 0">
-  <h1 style="font-size:17px">¿Eres participante?</h1>
+  <h1 style="font-size:17px">¿Tienes un código?</h1>
   <p class="hint" style="margin:0 0 10px">Escribe el código de la rifa que te dio el organizador.</p>
   <input class="inp" id="lgCode" placeholder="Código de rifa o enlace de acceso (VTA-…)" autocapitalize="characters">
   <button id="lgCodeGo" style="width:100%">Entrar a la rifa</button>
@@ -842,13 +881,223 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
    CONFIGURACION DE SUPABASE (opcional)
    Si dejas las dos claves vacías, la app funciona en modo local.
    ============================================================ */
+var APP_URL='https://xelaris7.github.io/sorteo/';
+/* Generador QR (sin dependencias) para las tarjetas */
+/* Generador QR mínimo y sin dependencias: modo byte, nivel de corrección M, versiones 1–15. */
+var QRX=(function(){
+  /* [total de codewords, codewords de datos] por bloque, nivel M, versiones 1–15 */
+  var RS=[[[26,16]],[[44,28]],[[70,44]],[[50,32],[50,32]],[[67,43],[67,43]],[[43,27],[43,27],[43,27],[43,27]],[[49,31],[49,31],[49,31],[49,31]],[[60,38],[60,38],[61,39],[61,39]],[[58,36],[58,36],[58,36],[59,37],[59,37]],[[69,43],[69,43],[69,43],[69,43],[70,44]],[[80,50],[81,51],[81,51],[81,51],[81,51]],[[58,36],[58,36],[58,36],[58,36],[58,36],[58,36],[59,37],[59,37]],[[59,37],[59,37],[59,37],[59,37],[59,37],[59,37],[59,37],[59,37],[60,38]],[[64,40],[64,40],[64,40],[64,40],[65,41],[65,41],[65,41],[65,41],[65,41]],[[65,41],[65,41],[65,41],[65,41],[65,41],[66,42],[66,42],[66,42],[66,42],[66,42]]];
+  /* Posiciones de los patrones de alineación por versión */
+  var PAT=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70]];
+
+  /* Campo GF(256) y Reed-Solomon */
+  var EXP=[],LOG=[];
+  (function(){var x=1;for(var i=0;i<255;i++){EXP[i]=x;LOG[x]=i;x<<=1;if(x&256)x^=0x11D;}for(var i=255;i<512;i++)EXP[i]=EXP[i-255];})();
+  function gmul(a,b){return (a&&b)?EXP[LOG[a]+LOG[b]]:0;}
+  function rsGen(n){
+    var g=[1];
+    for(var i=0;i<n;i++){
+      var ng=[];for(var k=0;k<g.length+1;k++)ng[k]=0;
+      for(var j=0;j<g.length;j++){ng[j]^=g[j];ng[j+1]^=gmul(g[j],EXP[i]);}
+      g=ng;
+    }
+    return g;
+  }
+  function rsEncode(data,n){
+    var gen=rsGen(n),res=data.slice();
+    for(var k=0;k<n;k++)res.push(0);
+    for(var i=0;i<data.length;i++){
+      var c=res[i];
+      if(c){for(var j=1;j<gen.length;j++)res[i+j]^=gmul(gen[j],c);}
+    }
+    return res.slice(data.length);
+  }
+
+  /* BCH para formato (G15) y versión (G18) */
+  function bchCode(data,g,gdeg){
+    var d=data<<gdeg;
+    for(var i=31;i>=gdeg;i--){if((d>>>i)&1)d^=g<<(i-gdeg);}
+    return (data<<gdeg)|d;
+  }
+
+  function dataTotal(v){var t=0;RS[v-1].forEach(function(b){t+=b[1];});return t;}
+  function utf8(s){return Array.from(new TextEncoder().encode(s));}
+  function pickVersion(nBytes){
+    for(var v=1;v<=15;v++){
+      var cb=v<10?8:16;
+      if(4+cb+nBytes*8<=dataTotal(v)*8)return v;
+    }
+    throw new Error('QR: datos demasiado largos');
+  }
+
+  /* Codewords finales: datos + corrección, intercalados por bloques */
+  function codewords(bytes,v){
+    var blocks=RS[v-1],total=dataTotal(v),bits=[];
+    function put(val,len){for(var i=len-1;i>=0;i--)bits.push((val>>>i)&1);}
+    put(4,4);
+    put(bytes.length,v<10?8:16);
+    bytes.forEach(function(b){put(b,8);});
+    for(var t=0;t<4&&bits.length<total*8;t++)bits.push(0);
+    while(bits.length%8)bits.push(0);
+    var data=[];
+    for(var i=0;i<bits.length;i+=8){var c=0;for(var j=0;j<8;j++)c=(c<<1)|bits[i+j];data.push(c);}
+    for(var p=0;data.length<total;p++)data.push(p%2?0x11:0xEC);
+    var dB=[],eB=[],idx=0;
+    blocks.forEach(function(b){
+      var dat=b[1],d=data.slice(idx,idx+dat);idx+=dat;
+      dB.push(d);eB.push(rsEncode(d,b[0]-dat));
+    });
+    var out=[],maxD=0;
+    dB.forEach(function(d){if(d.length>maxD)maxD=d.length;});
+    for(var i=0;i<maxD;i++)dB.forEach(function(d){if(i<d.length)out.push(d[i]);});
+    var maxE=eB[0].length;
+    for(var i=0;i<maxE;i++)eB.forEach(function(e){out.push(e[i]);});
+    return out;
+  }
+
+  function maskOn(m,r,c){
+    switch(m){
+      case 0:return (r+c)%2===0;
+      case 1:return r%2===0;
+      case 2:return c%3===0;
+      case 3:return (r+c)%3===0;
+      case 4:return (Math.floor(r/2)+Math.floor(c/3))%2===0;
+      case 5:return (r*c)%2+(r*c)%3===0;
+      case 6:return ((r*c)%2+(r*c)%3)%2===0;
+      default:return ((r+c)%2+(r*c)%3)%2===0;
+    }
+  }
+
+  function drawFormat(M,n,fb){
+    var b=function(i){return (fb>>i)&1;};
+    var s=function(r,c,x){M[r][c]=!!x;};
+    for(var i=0;i<=5;i++)s(i,8,b(i));
+    s(7,8,b(6));s(8,8,b(7));s(8,7,b(8));
+    for(var i=9;i<15;i++)s(8,14-i,b(i));
+    for(var i=0;i<8;i++)s(8,n-1-i,b(i));
+    for(var i=8;i<15;i++)s(n-15+i,8,b(i));
+    s(n-8,8,1);
+  }
+
+  function penalty(M){
+    var n=M.length,p=0,r,c,run;
+    for(r=0;r<n;r++){run=1;for(c=1;c<=n;c++){if(c<n&&M[r][c]===M[r][c-1])run++;else{if(run>=5)p+=3+(run-5);run=1;}}}
+    for(c=0;c<n;c++){run=1;for(r=1;r<=n;r++){if(r<n&&M[r][c]===M[r-1][c])run++;else{if(run>=5)p+=3+(run-5);run=1;}}}
+    for(r=0;r<n-1;r++)for(c=0;c<n-1;c++){var v=M[r][c];if(v===M[r][c+1]&&v===M[r+1][c]&&v===M[r+1][c+1])p+=3;}
+    var p1=[1,0,1,1,1,0,1,0,0,0,0],p2=[0,0,0,0,1,0,1,1,1,0,1],k,ok1,ok2;
+    for(r=0;r<n;r++)for(c=0;c+11<=n;c++){
+      ok1=true;ok2=true;
+      for(k=0;k<11;k++){var x=M[r][c+k]?1:0;if(x!==p1[k])ok1=false;if(x!==p2[k])ok2=false;}
+      if(ok1||ok2)p+=40;
+    }
+    for(c=0;c<n;c++)for(r=0;r+11<=n;r++){
+      ok1=true;ok2=true;
+      for(k=0;k<11;k++){var x=M[r+k][c]?1:0;if(x!==p1[k])ok1=false;if(x!==p2[k])ok2=false;}
+      if(ok1||ok2)p+=40;
+    }
+    var dark=0;
+    for(r=0;r<n;r++)for(c=0;c<n;c++)if(M[r][c])dark++;
+    p+=Math.floor(Math.abs(dark*100/(n*n)-50)/5)*10;
+    return p;
+  }
+
+  /* Devuelve la matriz {n, m} de un texto */
+  function build(text){
+    var bytes=utf8(String(text)),v=pickVersion(bytes.length);
+    var n=v*4+17,F=[],B=[];
+    for(var r=0;r<n;r++){F.push(new Array(n).fill(false));B.push(new Array(n).fill(false));}
+    function setF(r,c,dark){B[r][c]=!!dark;F[r][c]=true;}
+
+    /* Patrones de posición (esquinas) */
+    [[0,0],[n-7,0],[0,n-7]].forEach(function(o){
+      for(var dy=-1;dy<=7;dy++)for(var dx=-1;dx<=7;dx++){
+        var r=o[0]+dy,c=o[1]+dx;
+        if(r<0||c<0||r>=n||c>=n)continue;
+        var inside=dx>=0&&dx<=6&&dy>=0&&dy<=6;
+        var dark=inside&&(dx===0||dx===6||dy===0||dy===6||(dx>=2&&dx<=4&&dy>=2&&dy<=4));
+        setF(r,c,dark);
+      }
+    });
+    /* Patrones de alineación */
+    var p=PAT[v-1];
+    if(p.length){
+      var first=p[0],last=p[p.length-1];
+      p.forEach(function(r){p.forEach(function(c){
+        if((r===first&&c===first)||(r===first&&c===last)||(r===last&&c===first))return;
+        for(var dy=-2;dy<=2;dy++)for(var dx=-2;dx<=2;dx++)setF(r+dy,c+dx,Math.max(Math.abs(dx),Math.abs(dy))!==1);
+      });});
+    }
+    /* Líneas de sincronización */
+    for(var i=0;i<n;i++){
+      if(!F[6][i])setF(6,i,i%2===0);
+      if(!F[i][6])setF(i,6,i%2===0);
+    }
+    setF(n-8,8,true);
+    /* Zonas reservadas para el formato */
+    for(var i=0;i<9;i++){if(!F[8][i])setF(8,i,false);if(!F[i][8])setF(i,8,false);}
+    for(var i=0;i<8;i++){setF(n-1-i,8,false);setF(8,n-1-i,false);}
+    /* Información de versión (desde la 7) */
+    if(v>=7){
+      var vb=bchCode(v,0x1F25,12);
+      for(var i=0;i<18;i++){
+        var bit=(vb>>i)&1,a=n-11+i%3,b=Math.floor(i/3);
+        setF(a,b,bit);setF(b,a,bit);
+      }
+    }
+    /* Orden de colocación de los datos (en zigzag desde la esquina inferior derecha) */
+    var pos=[];
+    for(var right=n-1;right>=1;right-=2){
+      if(right===6)right=5;
+      for(var vert=0;vert<n;vert++){
+        for(var j=0;j<2;j++){
+          var c=right-j,up=((right+1)&2)===0,r=up?n-1-vert:vert;
+          if(!F[r][c])pos.push([r,c]);
+        }
+      }
+    }
+    var cw=codewords(bytes,v),total=cw.length*8;
+    var best=null,bestP=Infinity;
+    for(var mask=0;mask<8;mask++){
+      var M=B.map(function(row){return row.slice();});
+      for(var k=0;k<pos.length;k++){
+        var bi=k<total?((cw[k>>3]>>(7-(k&7)))&1):0;
+        var rr=pos[k][0],cc=pos[k][1];
+        M[rr][cc]=!!(bi^(maskOn(mask,rr,cc)?1:0));
+      }
+      drawFormat(M,n,bchCode(mask,0x537,10)^0x5412);
+      var pen=penalty(M);
+      if(pen<bestP){bestP=pen;best=M;}
+    }
+    return {n:n,m:best};
+  }
+
+  /* Dibuja el QR en el canvas dentro de un cuadrado (x,y,size), con zona silenciosa */
+  function paint(g,text,x,y,size){
+    var q=build(text),n=q.n,cell=Math.floor(size/(n+8)),off=Math.floor((size-cell*(n+8))/2);
+    g.fillStyle='#ffffff';g.fillRect(x,y,size,size);
+    g.fillStyle='#000000';
+    for(var r=0;r<n;r++)for(var c=0;c<n;c++){
+      if(q.m[r][c])g.fillRect(x+off+(c+4)*cell,y+off+(r+4)*cell,cell,cell);
+    }
+  }
+
+  return {build:build,paint:paint};
+})();
+
 var SUPABASE_URL='https://ftsgdctbpzvrljswfvmg.supabase.co';
 var SUPABASE_ANON_KEY='sb_publishable_GbLf_jzH_z59JokRsyVRYA_FVffBx0Y';
 var BUY_CODE=null,CLOUD_LIST=[],CLOUD_PLAN='free',lgSignup=false;
 
 var CLOUD=!!(SUPABASE_URL&&SUPABASE_ANON_KEY);
 var TOKEN=null;
-try{TOKEN=new URLSearchParams(location.search).get('t');}catch(e){}
+var DEEP_CODE=null,DEEP_SALE=null;
+try{
+  var _sp=new URLSearchParams(location.search);
+  TOKEN=_sp.get('t');
+  if(_sp.get('c'))DEEP_CODE=_sp.get('c').trim().toUpperCase();
+  var _s=(_sp.get('s')||'').trim().toUpperCase();
+  if(/^VTA-[A-Z0-9]{10}$/.test(_s))DEEP_SALE=_s;
+}catch(e){}
 
 var SAMPLE=['Ana Torres','Luis Mendoza','María Paredes','Carlos Vera','Sofía Andrade','Diego Cevallos','Valeria Ortiz','Andrés Salazar','Camila Reyes','Jorge Villacís','Daniela Játiva','Mateo Guerrero','Paola Carrillo','Fernando Estrada','Lucía Moreno','Santiago Narváez','Gabriela Proaño','Esteban Bravo','Karla Espinosa','Ricardo Chávez','Natalia Cárdenas','Pablo Montalvo','Verónica Aguirre','Sebastián Rojas','Mónica Herrera','Javier Molina','Isabel Cruz','Felipe Zambrano','Carolina Benítez','Marcelo Jaramillo','Tatiana Pazmiño','Alejandro Pinto','Fabiola Londoño','Gustavo Naranjo','Rosa Albán','Hugo Peñafiel','Silvana Córdova','Iván Escobar','Elena Maldonado','Raúl Tapia','Patricia Lara','Óscar Medina','Beatriz Salgado','Cristian Arias','Adriana Flores','Nicolás Ponce','Jessica Cedeño','Byron Vaca','Lorena Yánez','Wilson Quiroz','Mariana Suárez','Patricio Ríos','Alexandra Cobo','Henry Zurita','Dayana Ayala','Kevin Almeida','Cecilia Sandoval','Édison Mora','Pamela Rivas','David Carpio','Johana Burbano','Rodrigo Ulloa','Estefanía Lasso','Gonzalo Pérez','Nancy Chiriboga','Franklin Acosta','Liliana Mejía','Darío Calderón','Yadira Samaniego','Marco Tello','Soledad Vásquez','Cristina Dávila','Leonardo Báez','Mayra Orellana','Nelson Rueda','Tania Guzmán','Álvaro Mosquera','Erika Palacios','Rubén Cisneros','Viviana Ochoa','Joel Ibarra','Noemí Terán','Bryan Loor','Marisol Cueva','Cléber Alvear','Ximena Troya','Aníbal Granja','Rocío Bastidas','Galo Intriago','Priscila Andino','Milton Freire','Evelyn Coello','Rolando Mena','Jazmín Duque','Freddy Tamayo','Anabel Cabrera','Julio Padilla','Karen Solís','Washington Pozo','Teresa Barrera'];
 
@@ -1199,7 +1448,7 @@ function renderRifas(){
     var d=document.createElement('div');d.className='rf-item'+(on?' on':'');
     var nm=document.createElement('div');nm.className='rf-nm';nm.textContent=(CLOUD?rifaNumText(e.seq)+' · ':'')+(e.name||'Sin nombre')+(on?' · en uso':'');
     var cd=document.createElement('div');cd.className='rf-cd';cd.textContent='Código: '+e.code;
-    var r=document.createElement('div');r.className='row';r.style.marginTop='8px';
+    var r=document.createElement('div');r.className='rf-acts'+(on?'':' three');
     r.appendChild(rfBtn('Compartir código','share',e.id));
     if(!on)r.appendChild(rfBtn('Abrir','open',e.id));
     r.appendChild(rfBtn('Borrar','del',e.id,'danger-btn'));
@@ -1255,7 +1504,7 @@ $('codeBtn').addEventListener('click',function(){
   $('codeIn').value='';showMsg('mCode','');$('codeOv').classList.add('on');
   setTimeout(function(){$('codeIn').focus();},50);
 });
-$('codeNo').addEventListener('click',function(){$('codeOv').classList.remove('on');});
+$('codeNo').addEventListener('click',function(){$('codeOv').classList.remove('on');if(sess&&!adminOK&&!document.body.classList.contains('buyer'))showModePick();});
 $('codeYes').addEventListener('click',async function(){
   var err=CLOUD?await enterBuyerCloud($('codeIn').value):enterBuyer($('codeIn').value);
   if(err){showMsg('mCode',err,'er');return;}
@@ -1263,7 +1512,6 @@ $('codeYes').addEventListener('click',async function(){
 });
 $('lgCodeGo').addEventListener('click',async function(){
   if(!$('termsOk').checked){$('lgCodeMsg').textContent='Acepta los términos y condiciones para continuar.';return;}
-  if(!sess){$('lgCodeMsg').textContent='Primero crea tu cuenta o entra con tu correo.';return;}
   $('lgCodeMsg').textContent='Buscando la rifa…';
   var err=await enterBuyerCloud($('lgCode').value);
   if(err){$('lgCodeMsg').textContent=err;return;}
@@ -1484,13 +1732,15 @@ async function applyCard(info){
   if(changed){applyTitle();renderPhoto();}
 }
 async function enterBuyerCloud(code){
-  var c=String(code||'').trim().toUpperCase();
-  if(!c)return 'Escribe el código de la rifa o el enlace de acceso.';
-  var tokM=c.match(/VTA-[A-Z0-9]{10}/),sale=null;
-  if(tokM){
-    try{sale=await sbReq('POST','/rest/v1/rpc/sale_by_token',{p_token:tokM[0]},null,true);}
+  var raw=String(code||'').trim().toUpperCase();
+  var tokM=raw.match(/VTA-[A-Z0-9]{10}/),saleTok=tokM?tokM[0]:DEEP_SALE,sale=null;
+  var c=tokM?'':raw;
+  if(!c&&!saleTok)return 'Escribe el código de la rifa o el enlace de acceso.';
+  if(saleTok){
+    try{sale=await sbReq('POST','/rest/v1/rpc/sale_by_token',{p_token:saleTok},null,true);}
     catch(e){return 'No se pudo conectar. Revisa tu internet e intenta de nuevo.';}
     if(!sale||!sale.valid)return 'Este enlace de acceso no es válido. Pide uno nuevo al organizador.';
+    if(c&&c!==String(sale.code||'').toUpperCase())return 'Ese código no corresponde a la rifa de este enlace.';
     c=sale.code;
   }
   var info=null;
@@ -1498,7 +1748,7 @@ async function enterBuyerCloud(code){
   catch(e){return 'No se pudo conectar. Revisa tu internet e intenta de nuevo.';}
   if(!info||!info.valid)return 'No encontramos esa rifa. Revisa el código con el organizador.';
   BUY_CODE=c;RID=null;adminOK=false;CARD_PHOTO_V=null;
-  BUY_TOKEN=tokM?tokM[0]:null;SALE_QUOTA=sale?clampN(sale.quota,1,100,1):0;SALE_USED=!!(sale&&sale.used);
+  BUY_TOKEN=saleTok||null;SALE_QUOTA=sale?clampN(sale.quota,1,100,1):0;SALE_USED=!!(sale&&sale.used);
   MINE_SRV=(sale&&Array.isArray(sale.numbers))?sale.numbers.slice():[];
   DB=defaults();
   DB.cfg.name=info.raffle_name||'';
@@ -2976,7 +3226,7 @@ function copySaleText(t){
   catch(e){$('saleLink').select();}
 }
 function saleText(token,quota){
-  return 'Participa en la rifa «'+(DB.cfg.name||'')+'» (código: '+(codeNow()||'—')+'). Tu enlace de acceso: '+token+'. Debes elegir exactamente '+quota+(quota===1?' número':' números')+'. En la app toca «Tengo un código de acceso» y pega este enlace.';
+  return 'Participa en la rifa «'+(DB.cfg.name||'')+'». Debes elegir exactamente '+quota+(quota===1?' número':' números')+'.\nAbre este enlace: '+APP_URL+'?s='+token+'\nAl abrirlo escribe el código de la rifa: '+(codeNow()||'—')+' y toca Entrar.';
 }
 async function loadSales(){
   if(!CLOUD||!RID)return;
@@ -3139,8 +3389,34 @@ function afterLogin(){
   init();
   setSync('Conectado a Supabase');
 }
+function showModePick(){
+  $('lg').classList.remove('on');
+  $('modeOv').classList.add('on');
+}
+$('modeAdm').addEventListener('click',async function(){
+  $('modeOv').classList.remove('on');
+  try{await cloudLoad();afterLogin();}
+  catch(e){
+    sess=null;storeSess();showLogin();
+    $('lgMsg').classList.add('er');$('lgMsg').style.color='';
+    $('lgMsg').textContent='No pudimos abrir tu cuenta. Entra de nuevo.';
+  }
+});
+$('modePt').addEventListener('click',function(){
+  $('modeOv').classList.remove('on');
+  $('codeIn').value='';showMsg('mCode','');
+  $('codeOv').classList.add('on');
+  setTimeout(function(){$('codeIn').focus();},50);
+});
 async function startAdmin(){
   if(!CLOUD){$('invSec').style.display='';$('invHint').style.display='';$('saleSec').style.display='none';loadIdx();bootRaffle();loadDB();init();return;}
+  if(DEEP_CODE||DEEP_SALE){
+    showLogin();
+    $('lgCode').value=DEEP_CODE||'';
+    $('lgCodeMsg').textContent=DEEP_SALE?'Escribe el código de la rifa para entrar con tu enlace.':'';
+    setTimeout(function(){$('lgCode').focus();},100);
+    return;
+  }
   $('invSec').style.display='none';$('invHint').style.display='none';$('saleSec').style.display='';
 
   $('codeBtn').style.display='none';
@@ -3151,7 +3427,7 @@ async function startAdmin(){
   setSync('Conectando…');
   loadSess();
   if(sess){
-    try{await cloudLoad();afterLogin();return;}
+    try{await adminReq('POST','/rest/v1/rpc/me_role',{});showModePick();return;}
     catch(e){sess=null;storeSess();}
   }
   setSync('Inicia sesión para continuar');
@@ -3187,8 +3463,7 @@ $('lgGo').addEventListener('click',async function(){
     $('lgPass').value='';$('lgMsg').textContent='';
     saveTerms();
     if(pendingPt){pendingPt=false;$('lg').classList.remove('on');ptStart();return;}
-    await cloudLoad();
-    afterLogin();
+    showModePick();
   }catch(e){
     var msg=e.message||'';
     if(/already registered|already exists/i.test(msg))msg='Ese correo ya tiene cuenta. Entra con tu contraseña.';
@@ -3351,7 +3626,7 @@ $('pfok').addEventListener('click',async function(){
   }
   if(r&&(r.ok===true)){
     var nums=(Array.isArray(r.numbers)?r.numbers:[r.number]).slice().sort(function(a,b){return a-b;});
-    var t={raffle:r.raffle_name,number:nums.join(', '),name:name,phone:phone,email:email,code:byCode?BUY_TOKEN:(r.code||('B'+r.number)),date:r.issued_at||new Date().toISOString(),luck:pickLuck(),event:r.event||(pInfo&&pInfo.event)||null};
+    var t={raffle:r.raffle_name,number:nums.join(', '),name:name,phone:phone,email:email,code:byCode?BUY_TOKEN:(r.code||('B'+r.number)),date:r.issued_at||new Date().toISOString(),luck:pickLuck(),event:r.event||(pInfo&&pInfo.event)||null,rcode:BUY_CODE||'',sale:byCode?BUY_TOKEN:null};
     if(!byCode){try{localStorage.setItem('sorteo_ticket_'+TOKEN,JSON.stringify(t));}catch(e){}}
     else{SALE_USED=true;saveMine(nums);askNotifPerm();try{localStorage.setItem('sorteo_sale_ticket_'+BUY_TOKEN,JSON.stringify(t));}catch(e){}}
     showTicket(t);
@@ -3407,8 +3682,22 @@ function fitText(g,text,weight,start,min,maxW,maxLines,fam){
   g.font=weight+' '+min+'px '+fam;
   return {size:min,lines:wrapLines(g,text,maxW,maxLines)};
 }
+function basicName(full){
+  var w=String(full||'').trim().split(/\s+/).filter(Boolean);
+  if(w.length<=1)return w[0]||'';
+  return w[0]+' '+(w.length>=4?w[2]:w[1]);
+}
+/* Enlace del QR: abre la app con el código de la rifa y lleva los datos del boleto */
+function ticketUrl(t){
+  var q=[];
+  if(t.rcode)q.push('c='+encodeURIComponent(t.rcode));
+  if(t.sale)q.push('s='+encodeURIComponent(t.sale));
+  q.push('n='+encodeURIComponent(String(t.number).replace(/\s+/g,'')));
+  q.push('p='+encodeURIComponent([t.name||'',t.phone||'',t.email||''].join('|')));
+  return APP_URL+'?'+q.join('&');
+}
 function drawTicket(c,t){
-  var W=800,H=1660,g=c.getContext('2d');
+  var W=800,H=2000,g=c.getContext('2d');
   var F='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
   var luck=t.luck||pickLuck();
   var ev=t.event||null;
@@ -3418,10 +3707,10 @@ function drawTicket(c,t){
   g.save();
   rrect(g,30,30,W-60,H-60,40);g.clip();
   g.fillStyle='#1d4f91';g.fillRect(30,30,W-60,470);
-  g.fillRect(30,1400,W-60,230);
+  g.fillRect(30,1700,W-60,H-1730);
   g.fillStyle='rgba(245,184,41,0.85)';
   drawStar(g,95,95,16);drawStar(g,705,120,12);drawStar(g,140,330,10);drawStar(g,670,325,15);drawStar(g,420,70,9);
-  drawStar(g,100,1420,12);drawStar(g,700,1420,16);drawStar(g,130,1600,9);drawStar(g,680,1600,12);
+  drawStar(g,100,1725,12);drawStar(g,700,1725,16);drawStar(g,130,1935,9);drawStar(g,680,1935,12);
   g.restore();
 
   g.textAlign='center';g.textBaseline='alphabetic';
@@ -3433,20 +3722,21 @@ function drawTicket(c,t){
   var y=135+(190-total)/2+fit.size*0.85;
   fit.lines.forEach(function(l){g.fillText(l,W/2,y);y+=lh;});
 
+  /* Datos de la rifa: fecha, hora, red social, cuenta y código */
+  var evl=[];
   if(ev){
-    var evl=[
-      {t:fmtEvDate(ev.date)+' · '+ev.time+' h',c:'#ffffff',w:'700'},
-      {t:'En vivo por '+ev.platform,c:'#fde9b0',w:'600'},
-      {t:'Cuenta: '+ev.account,c:'#fde9b0',w:'600'}
-    ];
-    var yy=375;
-    evl.forEach(function(L){
-      var f=fitText(g,L.t,L.w,28,18,W-120,1,F);
-      g.font=L.w+' '+f.size+'px '+F;g.fillStyle=L.c;
-      g.fillText(f.lines[0],W/2,yy);
-      yy+=40;
-    });
+    evl.push({t:fmtEvDate(ev.date)+' · '+ev.time+' h',c:'#ffffff',w:'700'});
+    evl.push({t:'En vivo por '+ev.platform,c:'#fde9b0',w:'600'});
+    evl.push({t:'Cuenta: '+ev.account,c:'#fde9b0',w:'600'});
   }
+  if(t.rcode)evl.push({t:'Código de la rifa: '+t.rcode,c:'#ffffff',w:'700'});
+  var yy=365;
+  evl.forEach(function(L){
+    var f=fitText(g,L.t,L.w,28,18,W-120,1,F);
+    g.font=L.w+' '+f.size+'px '+F;g.fillStyle=L.c;
+    g.fillText(f.lines[0],W/2,yy);
+    yy+=38;
+  });
 
   g.fillStyle='#0f1b33';
   g.beginPath();g.arc(30,540,32,0,Math.PI*2);g.fill();
@@ -3454,8 +3744,9 @@ function drawTicket(c,t){
   g.strokeStyle='#c9c2b0';g.lineWidth=3;g.setLineDash([14,12]);
   g.beginPath();g.moveTo(80,540);g.lineTo(W-80,540);g.stroke();g.setLineDash([]);
 
+  /* Número(s) elegidos */
   g.fillStyle='#6b6a63';g.font='600 24px '+F;
-  g.fillText('TU NÚMERO',W/2,620);
+  g.fillText(String(t.number).indexOf(',')>=0?'TUS NÚMEROS':'TU NÚMERO',W/2,620);
   g.beginPath();g.arc(W/2,830,188,0,Math.PI*2);g.fillStyle='#fde9b0';g.fill();
   g.beginPath();g.arc(W/2,830,168,0,Math.PI*2);g.fillStyle='#f5b829';g.fill();
   g.lineWidth=6;g.strokeStyle='#1d4f91';
@@ -3466,35 +3757,33 @@ function drawTicket(c,t){
   g.fillText(num,W/2,840);
   g.textBaseline='alphabetic';
 
+  /* Participante: solo primer nombre y primer apellido */
   g.fillStyle='#6b6a63';g.font='600 24px '+F;
   g.fillText('PARTICIPANTE',W/2,1070);
-  var nf=fitText(g,t.name||'','700',52,30,W-160,2,F);
+  var nf=fitText(g,basicName(t.name),'700',52,30,W-160,2,F);
   g.font='700 '+nf.size+'px '+F;g.fillStyle='#1a2a44';
   var ny=1125,nlh=Math.round(nf.size*1.15);
   nf.lines.forEach(function(l){g.fillText(l,W/2,ny);ny+=nlh;});
 
-  g.fillStyle='#1a2a44';
-  var cy=ny+30;
-  g.font='600 30px '+F;
-  g.fillText('Celular: '+(t.phone||'No registrado'),W/2,cy);
-  if(t.email){
-    var ef=fitText(g,'Correo: '+t.email,'600',28,18,W-140,1,F);
-    g.font='600 '+ef.size+'px '+F;
-    g.fillText(ef.lines[0],W/2,cy+44);
-  }
-  g.fillStyle='#1d4f91';g.font='600 26px ui-monospace,Menlo,Consolas,monospace';
-  g.fillText('Tarjeta N.º '+t.code,W/2,1370);
+  /* Código QR: abre la app y lleva el código de la rifa y los datos del participante */
+  var qs=400,qx=(W-qs)/2,qy=1215;
+  QRX.paint(g,ticketUrl(t),qx,qy,qs);
+  g.strokeStyle='#1d4f91';g.lineWidth=4;g.strokeRect(qx-4,qy-4,qs+8,qs+8);
+  g.fillStyle='#1d4f91';g.font='600 26px '+F;
+  g.fillText('Escanea para entrar a la rifa',W/2,qy+qs+50);
 
+  /* Pie: suerte y datos de emisión */
   g.fillStyle='#ffffff';
   var lf=fitText(g,luck,'600',40,28,W-140,2,F);
   g.font='600 '+lf.size+'px '+F;
-  var ll=Math.round(lf.size*1.25),ly=1460;
+  var ll=Math.round(lf.size*1.25),ly=1750;
   lf.lines.forEach(function(l){g.fillText(l,W/2,ly);ly+=ll;});
   g.font='800 50px '+F;g.fillStyle='#f5b829';
-  g.fillText('¡Buena suerte!',W/2,1575);
+  g.fillText('¡Buena suerte!',W/2,1870);
   g.fillStyle='#cfe0f5';g.font='500 22px '+F;
   var dt=new Date(t.date||Date.now());
-  g.fillText('Emitido el '+dt.toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'})+' · '+dt.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),W/2,1612);
+  g.fillText('Tarjeta N.º '+t.code,W/2,1915);
+  g.fillText('Emitido el '+dt.toLocaleDateString('es',{day:'numeric',month:'long',year:'numeric'})+' · '+dt.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),W/2,1950);
 }
 /* ---------- Tarjetas para redes sociales ---------- */
 var CARD_FONT='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';

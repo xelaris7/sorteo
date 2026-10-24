@@ -315,6 +315,16 @@ body:not(.buyer) #exitBuyer{display:none}
   .opts>label.chk{width:100%!important;justify-content:space-between!important}
 }
 
+/* Configuración en computador: texto a la izquierda y controles (recuadros) a la derecha */
+@media (min-width:900px){
+  #vCfg .opts{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:10px 24px!important;width:100%!important}
+  #vCfg .opts>label{justify-self:start!important;text-align:left!important}
+  #vCfg .opts>.step,#vCfg .opts>select,#vCfg .opts>input{justify-self:end!important}
+  #vCfg .opts>label.chk{grid-column:1 / -1!important;width:100%!important;display:flex!important;flex-direction:row-reverse!important;justify-content:space-between!important;align-items:center!important}
+  #vCfg .opts>label.chk input{margin:0}
+  #vCfg .opts>label.chk span{text-align:left!important}
+}
+
 /* ===== Tema "juego" (vista previa) ===== */
 :root{
   --bg:#120b33;--text:#fff8e7;--text2:#c7bde8;
@@ -384,6 +394,10 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
 .rf-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .rf-acts>button{width:100%;margin:0}
 .rf-acts.three>button:last-child{grid-column:1 / -1;justify-self:center;width:calc(50% - 4px)}
+/* Pantalla principal del administrador: solo ENTRAR; INICIAR y Reiniciar están dentro de ENTRAR (panel) */
+body.adm-main #open,body.adm-main #go,body.adm-main #reset{display:none!important}
+#admRun{display:none}
+body.adm-main #admRun{display:block!important}
 </style>
 </head>
 <body>
@@ -401,6 +415,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   </div>
   <div class="podium" id="podium"></div>
   <div class="buyrow"><button class="primary buybtn" id="openSim">ENTRAR</button></div>
+  <div class="buyrow" id="partRow" style="display:none"><button class="buybtn" id="partBtn">PARTICIPANTES</button></div>
   <p class="hint" id="left" style="text-align:center"></p>
   <div class="row bottom"><button class="grow" id="open">ADMINISTRADOR</button></div>
   <div class="linkrow"><button class="linkbtn" id="codeBtn">Tengo un código de acceso</button><button class="linkbtn" id="mineBtn" style="display:none">Mis números</button><button class="linkbtn" id="exitBuyer">Salir del modo participante</button></div>
@@ -424,8 +439,8 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
 <div class="rs" id="codeOv" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
   <div class="rs-box">
     <h3 id="codeTitle">Ingresar</h3>
-    <p>Escribe el código de la rifa, o pega el enlace de acceso que te envió el organizador (empieza con VTA-).</p>
-    <input class="inp" id="codeIn" placeholder="SOL-XXXXXX o VTA-XXXXXXXXXX" maxlength="300" autocapitalize="characters" style="text-transform:uppercase">
+    <p>Escribe el código de la rifa, o pega el enlace de acceso que te envió el organizador (empieza con RIF- o VTA-).</p>
+    <input class="inp" id="codeIn" placeholder="Código de la rifa o RIF-001-XXXXX" maxlength="300" autocapitalize="characters" style="text-transform:uppercase">
     <p class="msg" id="mCode"></p>
     <div class="row"><button id="codeNo">Cancelar</button><button class="primary" id="codeYes">Entrar</button></div>
   </div>
@@ -435,8 +450,8 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   <div class="rs-box">
     <h3 id="modeTitle">¿Cómo quieres entrar?</h3>
     <p>Tu cuenta sirve para los dos modos. Elige el que necesitas ahora.</p>
-    <button class="primary" id="modeAdm" style="width:100%;margin-bottom:8px">MODO ADMINISTRADOR</button>
-    <button id="modePt" style="width:100%">MODO PARTICIPANTE</button>
+    <button class="primary" id="modeAdm" style="width:100%;margin-bottom:8px">ADMINISTRADOR</button>
+    <button id="modePt" style="width:100%">PARTICIPANTE</button>
   </div>
 </div>
 <div class="rs" id="delOv" role="dialog" aria-modal="true">
@@ -481,6 +496,12 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   <p class="hint" id="mineSub"></p>
   <div id="mineList"></div>
 </div></div>
+<div class="pn" id="partPn"><div class="pn-in">
+  <div class="pn-head"><span></span><button id="partClose">Cerrar</button></div>
+  <h1>Participantes</h1>
+  <p class="hint" id="partSub"></p>
+  <div id="partList"></div>
+</div></div>
 <div class="pn" id="pn"><div class="pn-in">
   <div class="pn-head">
     <h2>ADMINISTRADOR</h2>
@@ -491,41 +512,20 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   </div>
   <div class="tabs" id="tabsRow">
     <button id="tabCfg" class="on">Configuración</button>
-    <button id="tabAdmin">Participantes</button>
+    <button id="tabAdmin" style="display:none">Participantes</button>
     <button id="tabPick">Registrar</button>
     <button id="tabRifas">Rifas</button>
+  </div>
+  <div class="secbox" id="admRun">
+    <p class="sec" style="margin-top:0">Sorteo</p>
+    <div class="row"><button class="primary grow" id="admGo">INICIAR</button><button id="admRs">Reiniciar</button></div>
   </div>
   <div class="note" id="pNote"></div>
   <div class="warn" id="pWarn"></div>
 
-  <div id="adLock" style="display:none">
-    <p class="hint" id="pinHint" style="margin-top:0"></p>
-    <div class="row">
-      <input class="inp" id="pinIn" type="password" inputmode="numeric" placeholder="PIN" style="flex:1;margin:0">
-      <button class="primary" id="pinGo">Entrar</button>
-    </div>
-    <p class="msg er" id="mPin"></p>
-  </div>
 
   <div id="vRifas" style="display:none">
     <div class="note on" id="planTxt"></div>
-    <div id="crPanel" style="display:none;margin-bottom:12px">
-      <p class="sec" style="margin-top:0">Panel del creador</p>
-      <p class="hint" style="margin-top:0">Solo tú ves este panel. Elige la interfaz con la que quieres trabajar.</p>
-      <div class="row">
-        <button id="crFree">Administrador gratuito</button>
-        <button id="crVip">Administrador VIP</button>
-        <button id="crBuyer">Participante</button>
-      </div>
-      <p class="hint" id="crNote"></p>
-      <p class="sec">Asignar plan a un organizador</p>
-      <input class="inp" id="spUser" placeholder="ID de la cuenta del organizador" maxlength="40">
-      <div class="row" style="margin-top:8px">
-        <select id="spPlan" style="flex:1"><option value="free">Gratuito (1 rifa)</option><option value="vip">VIP (rifas ilimitadas)</option></select>
-        <button id="spGo">Aplicar plan</button>
-      </div>
-      <p class="msg" id="mSp"></p>
-    </div>
     <p class="sec">Mis rifas en este teléfono</p>
     <div id="rfList"></div>
     <p class="sec">Crear nueva rifa</p>
@@ -538,6 +538,21 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
 
     <p class="sec">Tarjeta de propaganda para redes</p>
     <p class="hint" style="margin-top:0">Usa los datos de la rifa seleccionada. Añade premios, contactos y una imagen propia si quieres (si no, se usa la imagen de la rifa).</p>
+    <p class="sec">Datos del sorteo</p>
+    <p class="hint" style="margin-top:0">Información ficticia que aparece en las tarjetas y en la página de participación.</p>
+    <div class="row">
+      <input class="inp" id="evDate" type="date" style="flex:1;margin:0">
+      <input class="inp" id="evTime" type="time" style="flex:1;margin:0">
+    </div>
+    <select class="inp" id="evPlat" style="margin-top:8px">
+      <option>TikTok LIVE</option>
+      <option>Instagram LIVE</option>
+      <option>YouTube Live</option>
+      <option>Facebook Live</option>
+    </select>
+    <input class="inp" id="evAcc" placeholder="Cuenta, ej. @sorteo_demo100" maxlength="40" style="margin-top:8px">
+    <div class="row"><button id="evSave">Guardar datos del sorteo</button></div>
+    <p class="msg" id="mEv"></p>
     <textarea class="inp" id="prPrizes" placeholder="Premios, uno por línea&#10;Ej.: Canasta familiar&#10;Ej.: Bono de $50" style="min-height:70px"></textarea>
     <input class="inp" id="prContacts" placeholder="Contactos (ej. 0991234567 · WhatsApp 0987654321)" maxlength="120" style="margin-top:8px">
     <input class="inp" id="prNote" placeholder="Texto adicional (opcional)" maxlength="160" style="margin-top:8px">
@@ -560,6 +575,24 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   </div>
 
   <div id="vCfg" style="display:none">
+    <div id="crPanel" style="display:none;margin-bottom:12px">
+      <p class="sec" style="margin-top:0">Panel del creador</p>
+      <p class="hint" style="margin-top:0">Elige tu plan. Si quieres ser VIP, el botón te lleva a Play Store para comprar la versión pro.</p>
+      <div class="row">
+        <button id="crFree">Administrador gratuito</button>
+        <button id="crVip">Administrador VIP</button>
+      </div>
+      <p class="hint" id="crNote"></p>
+      <div id="crAdmin" style="display:none">
+        <p class="sec">Asignar plan a un organizador</p>
+        <input class="inp" id="spUser" placeholder="ID de la cuenta del organizador" maxlength="40">
+        <div class="row" style="margin-top:8px">
+          <select id="spPlan" style="flex:1"><option value="free">Gratuito (1 rifa)</option><option value="vip">VIP (rifas ilimitadas)</option></select>
+          <button id="spGo">Aplicar plan</button>
+        </div>
+        <p class="msg" id="mSp"></p>
+      </div>
+    </div>
     <p class="sec" style="margin-top:0">Números del sorteo</p>
     <p class="hint" style="margin-top:0">Números que participan, del 1 al N (mínimo 10, máximo 1000).</p>
     <div class="row">
@@ -633,30 +666,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
       <p class="msg" id="mCodeSave"></p>
     </div>
 
-    <p class="sec">Datos del sorteo</p>
-    <p class="hint" style="margin-top:0">Información ficticia que aparece en las tarjetas y en la página de participación.</p>
-    <div class="row">
-      <input class="inp" id="evDate" type="date" style="flex:1;margin:0">
-      <input class="inp" id="evTime" type="time" style="flex:1;margin:0">
-    </div>
-    <select class="inp" id="evPlat" style="margin-top:8px">
-      <option>TikTok LIVE</option>
-      <option>Instagram LIVE</option>
-      <option>YouTube Live</option>
-      <option>Facebook Live</option>
-    </select>
-    <input class="inp" id="evAcc" placeholder="Cuenta, ej. @sorteo_demo100" maxlength="40" style="margin-top:8px">
-    <div class="row"><button id="evSave">Guardar datos del sorteo</button></div>
-    <p class="msg" id="mEv"></p>
 
-    <div id="pinSec">
-      <p class="sec">PIN de administrador</p>
-      <div class="row">
-        <input class="inp" id="pinSet" type="password" inputmode="numeric" placeholder="Nuevo PIN (mínimo 4)" style="flex:1;margin:0">
-        <button id="pinSave">Guardar PIN</button>
-      </div>
-      <p class="msg" id="mSet"></p>
-    </div>
     <div id="logoutRow" style="display:none">
       <p class="sec">Sesión</p>
       <button id="logout">Cerrar sesión</button>
@@ -730,6 +740,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
     <p class="sec">Enlaces de acceso</p>
     <div id="saleSec" style="display:none">
       <p class="hint" style="margin-top:0">Cada enlace autoriza a un participante a elegir exactamente la cantidad que indiques. Solo ese participante podrá ver el sorteo en vivo y recibir las alertas.</p>
+      <input class="inp" id="saleCodeIn" placeholder="Código de acceso (opcional): RIF-001-XXXXX" maxlength="20" autocapitalize="characters" style="margin-top:8px">
       <div class="row" style="margin-top:8px">
         <label style="align-self:center">Números a elegir</label>
         <select id="saleQuota" style="flex:1">
@@ -782,7 +793,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   </div>
   </div>
 
-  <div id="vAdmin" style="display:none">
+  <div id="vAdmin">
     <p class="sec" style="margin-top:0">Participantes</p>
     <p class="hint" style="margin-top:0">Números asignados y disponibles. Pasa el cursor sobre un número para ver a su participante.</p>
     <p class="hint" id="st2"></p>
@@ -810,7 +821,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
   <hr style="border:0;border-top:1px solid var(--border,#ddd);margin:18px 0">
   <h1 style="font-size:17px">¿Tienes un código?</h1>
   <p class="hint" style="margin:0 0 10px">Escribe el código de la rifa que te dio el organizador.</p>
-  <input class="inp" id="lgCode" placeholder="Código de rifa o enlace de acceso (VTA-…)" autocapitalize="characters">
+  <input class="inp" id="lgCode" placeholder="Código de rifa o enlace de acceso (RIF-…)" autocapitalize="characters">
   <button id="lgCodeGo" style="width:100%">Entrar a la rifa</button>
   <p class="msg er" id="lgCodeMsg"></p>
 </div></div>
@@ -1106,7 +1117,7 @@ try{
   TOKEN=_sp.get('t');
   if(_sp.get('c'))DEEP_CODE=_sp.get('c').trim().toUpperCase();
   var _s=(_sp.get('s')||'').trim().toUpperCase();
-  if(/^VTA-[A-Z0-9]{10}$/.test(_s))DEEP_SALE=_s;
+  if(/^(VTA-[A-Z0-9]{10}|RIF-\d{3}-[A-Z0-9]{5})$/.test(_s))DEEP_SALE=_s;
 }catch(e){}
 
 var SAMPLE=['Ana Torres','Luis Mendoza','María Paredes','Carlos Vera','Sofía Andrade','Diego Cevallos','Valeria Ortiz','Andrés Salazar','Camila Reyes','Jorge Villacís','Daniela Játiva','Mateo Guerrero','Paola Carrillo','Fernando Estrada','Lucía Moreno','Santiago Narváez','Gabriela Proaño','Esteban Bravo','Karla Espinosa','Ricardo Chávez','Natalia Cárdenas','Pablo Montalvo','Verónica Aguirre','Sebastián Rojas','Mónica Herrera','Javier Molina','Isabel Cruz','Felipe Zambrano','Carolina Benítez','Marcelo Jaramillo','Tatiana Pazmiño','Alejandro Pinto','Fabiola Londoño','Gustavo Naranjo','Rosa Albán','Hugo Peñafiel','Silvana Córdova','Iván Escobar','Elena Maldonado','Raúl Tapia','Patricia Lara','Óscar Medina','Beatriz Salgado','Cristian Arias','Adriana Flores','Nicolás Ponce','Jessica Cedeño','Byron Vaca','Lorena Yánez','Wilson Quiroz','Mariana Suárez','Patricio Ríos','Alexandra Cobo','Henry Zurita','Dayana Ayala','Kevin Almeida','Cecilia Sandoval','Édison Mora','Pamela Rivas','David Carpio','Johana Burbano','Rodrigo Ulloa','Estefanía Lasso','Gonzalo Pérez','Nancy Chiriboga','Franklin Acosta','Liliana Mejía','Darío Calderón','Yadira Samaniego','Marco Tello','Soledad Vásquez','Cristina Dávila','Leonardo Báez','Mayra Orellana','Nelson Rueda','Tania Guzmán','Álvaro Mosquera','Erika Palacios','Rubén Cisneros','Viviana Ochoa','Joel Ibarra','Noemí Terán','Bryan Loor','Marisol Cueva','Cléber Alvear','Ximena Troya','Aníbal Granja','Rocío Bastidas','Galo Intriago','Priscila Andino','Milton Freire','Evelyn Coello','Rolando Mena','Jazmín Duque','Freddy Tamayo','Anabel Cabrera','Julio Padilla','Karen Solís','Washington Pozo','Teresa Barrera'];
@@ -1416,23 +1427,33 @@ function planNow(){
   return CLOUD_PLAN;
 }
 function renderCreator(){
-  var show=!!(CLOUD&&CREATOR);
+  var show=!!CLOUD;
   $('crPanel').style.display=show?'':'none';
   if(!show)return;
-  $('crFree').classList.toggle('primary',PREVIEW_PLAN==='free');
-  $('crVip').classList.toggle('primary',PREVIEW_PLAN==='vip');
-  $('crNote').textContent=PREVIEW_PLAN
-    ?'Vista previa activa: '+(PREVIEW_PLAN==='vip'?'administrador VIP':'administrador gratuito')+'. Tu plan real es '+(CLOUD_PLAN==='vip'?'VIP':'gratuito')+'.'
-    :'Estás en tu vista real (plan '+(CLOUD_PLAN==='vip'?'VIP':'gratuito')+').';
+  $('crAdmin').style.display=CREATOR?'':'none';
+  $('crFree').classList.toggle('primary',planNow()==='free');
+  $('crVip').classList.toggle('primary',planNow()==='vip');
+  if(CREATOR){
+    $('crNote').textContent=PREVIEW_PLAN
+      ?'Vista previa activa: '+(PREVIEW_PLAN==='vip'?'administrador VIP':'administrador gratuito')+'. Tu plan real es '+(CLOUD_PLAN==='vip'?'VIP':'gratuito')+'.'
+      :'Estás en tu vista real (plan '+(CLOUD_PLAN==='vip'?'VIP':'gratuito')+').';
+  }else{
+    $('crNote').textContent=CLOUD_PLAN==='vip'
+      ?'Tu plan actual es VIP: rifas ilimitadas y hasta 1000 números.'
+      :'Tu plan actual es gratuito: hasta 100 números y una rifa a la vez.';
+  }
 }
 function setPreview(p){
   PREVIEW_PLAN=p;renderCreator();renderRifas();
 }
-$('crFree').addEventListener('click',function(){setPreview(PREVIEW_PLAN==='free'?null:'free');});
-$('crVip').addEventListener('click',function(){setPreview(PREVIEW_PLAN==='vip'?null:'vip');});
-$('crBuyer').addEventListener('click',function(){
-  $('lg').classList.add('on');
-  $('lgCode').focus();
+/* Enlace de la versión pro en Play Store (cambiar por el enlace exacto de la app publicada) */
+var PLAY_VIP_URL='https://play.google.com/store/search?q=RifaXs&c=apps';
+$('crFree').addEventListener('click',function(){
+  if(CREATOR)setPreview(PREVIEW_PLAN==='free'?null:'free');
+});
+$('crVip').addEventListener('click',function(){
+  if(CREATOR){setPreview(PREVIEW_PLAN==='vip'?null:'vip');return;}
+  if(CLOUD_PLAN!=='vip')window.open(PLAY_VIP_URL,'_blank');
 });
 $('spGo').addEventListener('click',async function(){
   if(!CLOUD||!CREATOR)return;
@@ -1743,7 +1764,7 @@ async function applyCard(info){
 }
 async function enterBuyerCloud(code){
   var raw=String(code||'').trim().toUpperCase();
-  var tokM=raw.match(/VTA-[A-Z0-9]{10}/),saleTok=tokM?tokM[0]:DEEP_SALE,sale=null;
+  var tokM=raw.match(/VTA-[A-Z0-9]{10}|RIF-\d{3}-[A-Z0-9]{5}/),saleTok=tokM?tokM[0]:DEEP_SALE,sale=null;
   var c=tokM?'':raw;
   if(!c&&!saleTok)return 'Escribe el código de la rifa o el enlace de acceso.';
   if(saleTok){
@@ -1760,6 +1781,7 @@ async function enterBuyerCloud(code){
   BUY_CODE=c;RID=null;adminOK=false;CARD_PHOTO_V=null;
   BUY_TOKEN=saleTok||null;SALE_QUOTA=sale?clampN(sale.quota,1,100,1):0;SALE_USED=!!(sale&&sale.used);
   MINE_SRV=(sale&&Array.isArray(sale.numbers))?sale.numbers.slice():[];
+  document.body.classList.remove('demo');
   DB=defaults();
   DB.cfg.name=info.raffle_name||'';
   DB.cfg.total=clampN(info.total,10,1000,100);
@@ -2017,6 +2039,7 @@ function myNumbers(){return BUY_TOKEN?MINE_SRV.slice():[];}
 function saveMine(nums){MINE_SRV=(nums||[]).map(Number).sort(function(a,b){return a-b;});renderMineBtn();markMine();}
 function isMine(n){return myNumbers().indexOf(n)>=0;}
 function renderMineBtn(){
+  renderPartBtn();
   var b=$('mineBtn');if(!b)return;
   var show=document.body.classList.contains('buyer')&&myNumbers().length>0;
   b.style.display=show?'':'none';
@@ -2042,6 +2065,28 @@ function openMine(){
 }
 $('mineBtn').addEventListener('click',function(){openMine();$('minePn').classList.add('on');});
 $('mineClose').addEventListener('click',function(){$('minePn').classList.remove('on');});
+/* PARTICIPANTES (solo participantes): lista de solo lectura con números libres y ocupados; nombre y primer apellido */
+function renderPartBtn(){
+  var r=$('partRow');if(!r)return;
+  var show=document.body.classList.contains('buyer');
+  r.style.display=show?'':'none';
+  if(!show)$('partPn').classList.remove('on');
+}
+function openPart(){
+  var list=$('partList');list.innerHTML='';
+  var T=DB.cfg.total||0,taken=0;
+  for(var n=1;n<=T;n++){
+    var p=DB.people[n],name=p&&p.name?basicName(p.name):'';
+    if(name)taken++;
+    var row=document.createElement('div');row.className='mine-row';
+    var c=document.createElement('div');c.className='mine-num '+(name?'':'win');c.textContent=n;
+    var t=document.createElement('div');t.className='mine-st';t.textContent=name||'Libre';
+    row.appendChild(c);row.appendChild(t);list.appendChild(row);
+  }
+  $('partSub').textContent=taken+' ocupados · '+(T-taken)+' libres de '+T+'. Solo lectura.';
+}
+$('partBtn').addEventListener('click',function(){openPart();$('partPn').classList.add('on');});
+$('partClose').addEventListener('click',function(){$('partPn').classList.remove('on');});
 function alertMine(n,s){
   var win=!!(s&&s.t==='win');
   var title=win?'¡Tu número salió: GANADOR!':'Tu número salió: eliminado';
@@ -2838,12 +2883,12 @@ function renderP(){
 }
 function setMode(m){
   pnMode=m;selN=null;
-  var need=!adminOK&&!CLOUD;
+  var need=false;
   var lim=!need&&started();
   $('tabsRow').style.display=lim?'none':'';
   $('vRestart').style.display=lim?'':'none';
   if(lim){
-    ['vCfg','vAdmin','vPick','vLinks','vRifas','adLock'].forEach(function(id){$(id).style.display='none';});
+    ['vCfg','vAdmin','vPick','vLinks','vRifas'].forEach(function(id){$(id).style.display='none';});
     renderP();
     return;
   }
@@ -2851,16 +2896,11 @@ function setMode(m){
   $('tabAdmin').classList.toggle('on',m==='admin');
   $('tabPick').classList.toggle('on',m==='pick');
   $('tabRifas').classList.toggle('on',m==='rifas');
-  $('adLock').style.display=need?'':'none';
   $('vCfg').style.display=(m==='cfg'&&!need)?'':'none';
-  $('vAdmin').style.display=(m==='admin'&&!need)?'':'none';
+  $('vAdmin').style.display=(m==='pick'&&!need)?'':'none';
   $('vPick').style.display=(m==='pick'&&!need)?'':'none';
   $('vRifas').style.display=(m==='rifas'&&!need)?'':'none';
-  if(need){
-    $('pinHint').textContent=DB.cfg.pin?'Esta sección es solo para el administrador. Escribe su PIN.':'Crea un PIN de administrador (mínimo 4 caracteres) para entrar.';
-    $('pinGo').textContent=DB.cfg.pin?'Entrar':'Crear PIN y entrar';
-  }
-  ['mPin','mSet','mName','m1','m2','mEv','mTot','mInv','mCol'].forEach(function(id){showMsg(id,'');});
+  ['mName','m1','m2','mEv','mTot','mInv','mCol'].forEach(function(id){showMsg(id,'');});
   $('v1tk').style.display='none';
   if(!need){
     if(m==='cfg'){
@@ -3125,7 +3165,10 @@ $('rNameSave').addEventListener('click',function(){
 });
 $('totSave').addEventListener('click',function(){
   if(busy||drawn.length>0){showMsg('mTot','Hay un sorteo en curso. Reinicia para cambiar la cantidad.','er');return;}
-  var v=clampN($('totN').value,10,1000,DB.cfg.total);
+  var maxN=planNow()==='vip'?1000:100;
+  var raw=parseInt($('totN').value,10);
+  if(raw>maxN){showMsg('mTot','Tu plan permite hasta '+maxN+' números'+(maxN===100?'. Con VIP puedes llegar a 1000.':'.'),'er');return;}
+  var v=clampN($('totN').value,10,maxN,DB.cfg.total);
   if(v===DB.cfg.total){showMsg('mTot','Ya hay '+v+' números.','ok');return;}
   var cur=DB.cfg.total;
   var over=Object.keys(DB.people).map(Number).filter(function(n){return n>v;});
@@ -3187,21 +3230,6 @@ $('cfYes').addEventListener('click',function(){
   var cb=cfCb;cfCb=null;$('cfOv').classList.remove('on');
   if(cb)cb();
 });
-$('pinGo').addEventListener('click',function(){
-  var v=$('pinIn').value.trim();
-  if(!DB.cfg.pin){
-    if(v.length<4){showMsg('mPin','El PIN debe tener al menos 4 caracteres.','er');return;}
-    DB.cfg.pin=v;save();adminOK=true;$('pinIn').value='';setMode('admin');return;
-  }
-  if(v===DB.cfg.pin){adminOK=true;$('pinIn').value='';setMode('admin');}
-  else showMsg('mPin','PIN incorrecto.','er');
-});
-$('pinSave').addEventListener('click',function(){
-  var v=$('pinSet').value.trim();
-  if(v.length<4){showMsg('mSet','El PIN debe tener al menos 4 caracteres.','er');return;}
-  DB.cfg.pin=v;save();$('pinSet').value='';
-  showMsg('mSet','PIN guardado.','ok');
-});
 $('tabPick').addEventListener('click',function(){setMode('pick');});
 $('tabAdmin').addEventListener('click',function(){setMode('admin');});
 $('tabCfg').addEventListener('click',function(){setMode('cfg');});
@@ -3217,7 +3245,10 @@ $('pnRefresh').addEventListener('click',function(){
 async function buyNow(){
   if(busy)return;
   if(CLOUD){
-    if(!codeNow()){$('left').textContent='Esta rifa aún no tiene código. Intenta de nuevo en un momento.';return;}
+    if(!codeNow()){
+      if(document.body.classList.contains('demo')){$('codeIn').value='';showMsg('mCode','');$('codeOv').classList.add('on');setTimeout(function(){$('codeIn').focus();},50);return;}
+      $('left').textContent='Esta rifa aún no tiene código. Intenta de nuevo en un momento.';return;
+    }
     TOKEN=null;
     if(adminOK&&!BUY_TOKEN){
       /* El administrador vende con enlaces de venta: se abre la pestaña para crear uno */
@@ -3238,7 +3269,10 @@ function closeBuyer(){
   TOKEN=null;pInfo=null;curTicket=null;
   init();
 }
-$('openSim').addEventListener('click',buyNow);
+$('admGo').addEventListener('click',function(){$('go').click();});
+$('admRs').addEventListener('click',function(){$('reset').click();});
+setInterval(function(){$('admGo').textContent=$('go').textContent;$('admGo').disabled=$('go').disabled;$('admRs').disabled=$('reset').disabled;},400);
+$('openSim').addEventListener('click',function(){if(document.body.classList.contains('adm-main')){openPanel();return;}buyNow();});
 $('linkBuyView').addEventListener('click',buyNow);
 $('buyClose').addEventListener('click',closeBuyer);
 $('v1dl').addEventListener('click',function(){if(lastSale)downloadCanvas($('v1cv'),'tarjeta-'+lastSale.number+'.png');});
@@ -3250,7 +3284,7 @@ function copySaleText(t){
   catch(e){$('saleLink').select();}
 }
 function saleText(token,quota){
-  return 'Rifa «'+(DB.cfg.name||'')+'» · Código de la rifa: '+(codeNow()||'—')+' · Debes elegir exactamente '+quota+(quota===1?' número':' números')+'. Abre este enlace y escribe el código de la rifa: '+APP_URL+'?s='+token;
+  return 'Rifa «'+(DB.cfg.name||'')+'» · Código de la rifa: '+(codeNow()||'—')+' · Debes elegir exactamente '+quota+(quota===1?' número':' números')+'. Abre este enlace y escribe el código de la rifa: '+APP_URL+'abrir.html?s='+token;
 }
 async function loadSales(){
   if(!CLOUD||!RID)return;
@@ -3270,16 +3304,23 @@ async function loadSales(){
 $('saleGen').addEventListener('click',async function(){
   if(!RID){showMsg('mSale','Primero abre una rifa.','er');return;}
   var q=clampN($('saleQuota').value,1,100,1);
+  var cod=($('saleCodeIn').value||'').trim().toUpperCase();
+  if(cod&&!/^RIF-\d{3}-[A-Z0-9]{5}$/.test(cod)){showMsg('mSale','El código debe tener el formato RIF-001-XXXXX (3 números y 5 letras o números).','er');return;}
   showMsg('mSale','Creando enlace…');
   try{
-    var rs=await adminReq('POST','/rest/v1/sale_links?select=token,quota',{raffle_id:RID,quota:q},{Prefer:'return=representation'});
+    var body={raffle_id:RID,quota:q};if(cod)body.token=cod;
+    var rs=await adminReq('POST','/rest/v1/sale_links?select=token,quota',body,{Prefer:'return=representation'});
+    $('saleCodeIn').value='';
     $('saleLink').value=saleText(rs[0].token,q);
     SALE_LAST={token:rs[0].token,quota:q};
     drawSaleCard($('saleCv'),{raffle:DB.cfg.name||'',event:{date:DB.cfg.date,time:DB.cfg.time,platform:DB.cfg.platform,account:DB.cfg.account},code:rs[0].token,quota:q});
     $('saleOut').style.display='';$('saleOut').classList.add('on');
     showMsg('mSale','Enlace creado. Envíalo al participante.');
     loadSales();
-  }catch(e){showMsg('mSale','No se pudo crear el enlace: '+e.message,'er');}
+  }catch(e){
+    if(/duplicate|unique|23505/i.test(e.message||''))showMsg('mSale','Ese código ya existe. Escribe otro.','er');
+    else showMsg('mSale','No se pudo crear el enlace: '+e.message,'er');
+  }
 });
 $('saleCopy').addEventListener('click',function(){copySaleText($('saleLink').value);});
 var SALE_LAST=null;
@@ -3301,7 +3342,8 @@ $('prGo').addEventListener('click',function(){
     event:{date:DB.cfg.date,time:DB.cfg.time,platform:DB.cfg.platform,account:DB.cfg.account},
     prizes:prizes,total:DB.cfg.total,winners:DB.cfg.winners,
     contacts:$('prContacts').value.trim(),note:$('prNote').value.trim(),
-    code:codeNow()||'—',image:PR_IMG||DB.cfg.photo||null};
+    code:codeNow()||'—',image:PR_IMG||DB.cfg.photo||null,
+    link:codeNow()?APP_URL+'abrir.html?c='+encodeURIComponent(codeNow()):APP_URL};
   var cv=$('prCv');
   showMsg('mPr','Generando tarjeta…');
   drawPromoCard(cv,o).then(function(){
@@ -3410,6 +3452,8 @@ function showLogin(){$('lg').classList.add('on');$('lgMsg').textContent='';}
 function afterLogin(){
   $('lg').classList.remove('on');
   adminOK=true;
+  document.body.classList.add('adm-main');
+  $('codeBtn').style.display='none';
   init();
   setSync('Conectado a Supabase');
 }
@@ -3419,6 +3463,7 @@ function showModePick(){
 }
 $('modeAdm').addEventListener('click',async function(){
   $('modeOv').classList.remove('on');
+  if(!sess){showLogin();return;}
   try{await cloudLoad();afterLogin();}
   catch(e){
     sess=null;storeSess();showLogin();
@@ -3426,11 +3471,22 @@ $('modeAdm').addEventListener('click',async function(){
     $('lgMsg').textContent='No pudimos abrir tu cuenta. Entra de nuevo.';
   }
 });
+/* Participante sin código: ve una rifa de ejemplo con datos ficticios; para elegir números necesita el código */
+function enterDemo(){
+  document.body.classList.add('demo');
+  DB=defaults();
+  DB.cfg.name='Rifa de ejemplo';
+  DB.cfg.total=100;
+  DB.people={};
+  for(var i=1;i<=60;i++)DB.people[i]=sampleFor(i);
+  DB.sample=true;
+  $('codeBtn').style.display='';
+  $('mineBtn').style.display='none';
+  init();
+}
 $('modePt').addEventListener('click',function(){
   $('modeOv').classList.remove('on');
-  $('codeIn').value='';showMsg('mCode','');
-  $('codeOv').classList.add('on');
-  setTimeout(function(){$('codeIn').focus();},50);
+  enterDemo();
 });
 async function startAdmin(){
   if(!CLOUD){$('invSec').style.display='';$('invHint').style.display='';$('saleSec').style.display='none';loadIdx();bootRaffle();loadDB();init();return;}
@@ -3444,18 +3500,17 @@ async function startAdmin(){
   $('invSec').style.display='none';$('invHint').style.display='none';$('saleSec').style.display='';
 
   $('codeBtn').style.display='none';
-  $('pinSec').style.display='none';
   $('tSample').style.display='none';
   $('logoutRow').style.display='';
   $('pnRefresh').style.display='';
   setSync('Conectando…');
   loadSess();
   if(sess){
-    try{await adminReq('POST','/rest/v1/rpc/me_role',{});showModePick();return;}
+    try{await adminReq('POST','/rest/v1/rpc/me_role',{});}
     catch(e){sess=null;storeSess();}
   }
-  setSync('Inicia sesión para continuar');
-  showLogin();
+  setSync('Elige cómo quieres entrar');
+  showModePick();
 }
 function setLgMode(signup){
   lgSignup=signup;
@@ -3487,7 +3542,7 @@ $('lgGo').addEventListener('click',async function(){
     $('lgPass').value='';$('lgMsg').textContent='';
     saveTerms();
     if(pendingPt){pendingPt=false;$('lg').classList.remove('on');ptStart();return;}
-    showModePick();
+    await cloudLoad();afterLogin();
   }catch(e){
     var msg=e.message||'';
     if(/already registered|already exists/i.test(msg))msg='Ese correo ya tiene cuenta. Entra con tu contraseña.';
@@ -3499,7 +3554,7 @@ $('lgGo').addEventListener('click',async function(){
 });
 $('lgPass').addEventListener('keydown',function(e){if(e.key==='Enter')$('lgGo').click();});
 $('logout').addEventListener('click',function(){
-  sess=null;storeSess();RID=null;DB=defaults();CLOUD_LIST=[];CLOUD_PLAN='free';CREATOR=false;PREVIEW_PLAN=null;renderCreator();BUY_CODE=null;adminOK=false;liveStopPoll();
+  sess=null;storeSess();RID=null;DB=defaults();CLOUD_LIST=[];CLOUD_PLAN='free';CREATOR=false;PREVIEW_PLAN=null;renderCreator();BUY_CODE=null;adminOK=false;document.body.classList.remove('adm-main');liveStopPoll();
   document.body.classList.remove('buyer');
   pn.classList.remove('on');stopPoll();
   init(true);
@@ -3893,9 +3948,10 @@ function drawPromoCard(c,o){
       if(o.note)items.push({t:o.note,w:'600',s:28,c:'#fde9b0',n:2,gap:14});
       if(o.contacts)items.push({t:'Contacto: '+o.contacts,w:'700',s:30,c:'#ffffff',n:2,gap:10});
       y=cardLines(g,items,y+(im?0:30),W-160,F,im?1:1.22);
-      rrect(g,90,H-150,W-180,70,20);g.fillStyle='rgba(255,255,255,0.14)';g.fill();
+      rrect(g,90,H-150,660,70,20);g.fillStyle='rgba(255,255,255,0.14)';g.fill();
       g.fillStyle='#ffffff';g.font='700 28px '+F;
-      g.fillText('Identificación de la rifa: '+(o.code||'—'),W/2,H-104);
+      g.fillText('Identificación de la rifa: '+(o.code||'—'),420,H-104);
+      if(window.QRX&&o.link)QRX.paint(g,o.link,W-90-220,H-40-220,220);
       resolve();
     }
     if(o.image){

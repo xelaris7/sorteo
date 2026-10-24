@@ -617,8 +617,9 @@ button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;
   </div>
 
   <div id="vCfg" style="display:none">
+    <p class="hint" id="edNote" style="display:none;margin-top:0">Versión gratuita: hasta 100 números y 1 rifa a la vez. Premios y colores solo se pueden ver, no cambiar.</p>
     <p class="sec" style="margin-top:0">Números del sorteo</p>
-    <p class="hint" style="margin-top:0">Números que participan, del 1 al N (mínimo 10, máximo 100).</p>
+    <p class="hint" style="margin-top:0">Números que participan, del 1 al N (mínimo 10, máximo <span id="totMax">100</span>).</p>
     <div class="row">
       <input class="inp" id="totN" type="number" min="10" max="100" step="1" inputmode="numeric" style="flex:1;margin:0">
       <button id="totSave">Guardar cantidad</button>
@@ -854,26 +855,26 @@ button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;
   <h1>Términos y condiciones</h1>
   <p>RifaXs · versión 2026-10 · texto preliminar</p>
   <h2>1. Aceptación</h2>
-  <p>Al crear una cuenta o usar la app aceptas estos términos. Si no estás de acuerdo, no uses la app.</p>
-  <h2>2. Administradores (organizadores)</h2>
+  <p>Al crear una cuenta o usar la app aceptas estos términos de forma libre y con tu consentimiento. Si no estás de acuerdo, no uses la app.</p>
+  <h2>2. Organizadores</h2>
   <ul>
     <li>Registra datos verdaderos del sorteo, de los premios y de tu identidad como organizador.</li>
-    <li>La participación en tus sorteos debe ser gratuita. La app no debe usarse para cobrar por participar.</li>
-    <li>Usa los datos de los participantes solo para realizar el sorteo y entregar los premios.</li>
-    <li>Cumple las leyes de tu país sobre sorteos y entrega los premios anunciados.</li>
-    <li>El plan gratuito tiene límites: hasta 100 números y una rifa a la vez.</li>
+    <li>Realiza tus sorteos con la participación libre y voluntaria de quienes se inscriben, y solo con su consentimiento.</li>
+    <li>Usa los datos de los participantes únicamente para realizar el sorteo y entregar los premios anunciados.</li>
+    <li>Cumple las leyes de tu país sobre sorteos, promociones, protección de datos personales y entrega de premios.</li>
   </ul>
   <h2>3. Participantes</h2>
   <ul>
-    <li>Registra tu nombre completo, celular y correo reales.</li>
+    <li>Participas de forma libre y voluntaria, y consientes el uso de tus datos para este sorteo.</li>
+    <li>Registra tu nombre completo, celular y correo reales. Si eres menor de edad, debes contar con la autorización de tu representante.</li>
     <li>Tu enlace o código de acceso es personal. No lo compartas.</li>
     <li>El sorteo se realiza en vivo y el resultado es definitivo.</li>
     <li>La tarjeta con código QR es tu comprobante. No la publiques en redes sociales.</li>
   </ul>
   <h2>4. Datos personales</h2>
-  <p>La app guarda nombre, celular, correo y fotos para organizar el sorteo. Puedes pedir al organizador que elimine tus datos.</p>
+  <p>La app guarda nombre, celular, correo y fotos para organizar el sorteo, con el consentimiento de cada participante. Puedes pedir al organizador acceder a tus datos, corregirlos o eliminarlos, según la ley de tu país.</p>
   <h2>5. Responsabilidad</h2>
-  <p>RifaXs proporciona la herramienta. El organizador responde por el sorteo, los premios y el uso de los datos de sus participantes.</p>
+  <p>RifaXs proporciona la herramienta. El organizador responde por el sorteo, los premios, el cumplimiento de la ley local y el uso de los datos de sus participantes.</p>
   <h2>6. Cambios</h2>
   <p>Podemos actualizar estos términos. Si cambian, se pedirá aceptarlos de nuevo.</p>
   <button class="primary" id="termsBack" style="width:100%;margin-top:14px">Volver</button>
@@ -920,7 +921,18 @@ button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js">/* Versión gratuita: lo que se ve pero no se puede cambiar */
+function applyEdition(){
+  if(EDITION!=='free')return;
+  $('edNote').style.display='';
+  ['dMin','dPlus','wMin','wPlus','eMin','ePlus','bigLast','firstMult','countdown','colWin','colOut','colCell','colReset'].forEach(function(id){
+    var el=$(id);if(el)el.disabled=true;
+  });
+  var q=$('saleQuota');
+  if(q){q.innerHTML='<option value="1" selected>1</option>';q.disabled=true;}
+}
+applyEdition();
+</script>
 <script>
 /* ============================================================
    CONFIGURACION DE SUPABASE (opcional)
@@ -1133,6 +1145,8 @@ var SUPABASE_URL='https://ftsgdctbpzvrljswfvmg.supabase.co';
 var SUPABASE_ANON_KEY='sb_publishable_GbLf_jzH_z59JokRsyVRYA_FVffBx0Y';
 var BUY_CODE=null,CLOUD_LIST=[],CLOUD_PLAN='free',lgSignup=false;
 
+/* Edición de la app: 'vip' (APK VIP, exige cuenta VIP), 'free' (APK gratuita, siempre límites) o 'web' (sigue el plan de la cuenta). La base de datos también valida el plan de la cuenta. */
+var EDITION='web';
 var CLOUD=!!(SUPABASE_URL&&SUPABASE_ANON_KEY);
 var TOKEN=null;
 var DEEP_CODE=null,DEEP_SALE=null;
@@ -1343,7 +1357,7 @@ function normalizeDB(){
   DB.cfg.countdown=[3,5,10].indexOf(parseInt(DB.cfg.countdown,10))>=0?parseInt(DB.cfg.countdown,10):5;
   DB.cfg.firstMult=[1,1.5,2].indexOf(parseFloat(DB.cfg.firstMult))>=0?parseFloat(DB.cfg.firstMult):1;
   DB.cfg.pin=DB.cfg.pin||'';
-  DB.cfg.total=clampN(DB.cfg.total,10,100,100);
+  DB.cfg.total=clampN(DB.cfg.total,10,totCap(),100);
   DB.cfg.date=DB.cfg.date||'2026-10-18';
   DB.cfg.time=DB.cfg.time||'20:00';
   DB.cfg.platform=DB.cfg.platform||'TikTok LIVE';
@@ -1443,8 +1457,12 @@ function rfBtn(label,act,id,cls){
   if(cls)b.className=cls;
   return b;
 }
-/* La app es siempre de administrador gratuito: 1 rifa a la vez y hasta 100 números */
-function planNow(){return 'free';}
+/* Modo limitado: APK gratuita siempre; web solo si la cuenta no es VIP. APK VIP siempre sin límites (exige cuenta VIP). */
+function fxNow(){return EDITION==='free'||(EDITION==='web'&&CLOUD_PLAN!=='vip');}
+function planNow(){return fxNow()?'free':'vip';}
+/* Tope de números: gratuita y web gratuita 100; VIP hasta 1000 */
+function totCap(){return fxNow()?100:1000;}
+function applyTotCap(){var c=totCap();var i=$('totN');if(i)i.max=c;var t=$('totMax');if(t)t.textContent=c;}
 function renderCreator(){}
 
 function renderRifas(){
@@ -1577,6 +1595,8 @@ function setSess(d){
 async function sbReq(method,path,body,extra,noAuth){
   var h={apikey:SUPABASE_ANON_KEY,'Content-Type':'application/json'};
   h.Authorization='Bearer '+((!noAuth&&sess&&sess.access_token)||SUPABASE_ANON_KEY);
+  /* La base de datos aplica los límites de la APK gratuita aunque la cuenta sea VIP */
+  h['x-edition']=EDITION;
   if(extra)for(var k in extra)h[k]=extra[k];
   var r=await fetch(SUPABASE_URL.replace(/\/$/,'')+path,{method:method,headers:h,body:body!==undefined?JSON.stringify(body):undefined});
   var txt=await r.text(),data=null;
@@ -1648,7 +1668,7 @@ async function cloudLoadRaffle(id){
   DB.cfg.bigLast=r.big_last!==false;
   DB.draws=Array.isArray(r.draws)?r.draws:[];
   applyEvent(r.event);
-  DB.cfg.total=clampN(r.total,10,100,100);
+  DB.cfg.total=clampN(r.total,10,totCap(),100);
   DB.cfg.photo=r.photo||'';
   PHOTO_SENT=photoHash(DB.cfg.photo);
   normalizeDB();
@@ -1764,7 +1784,7 @@ async function enterBuyerCloud(code){
   document.body.classList.remove('demo');
   DB=defaults();
   DB.cfg.name=info.raffle_name||'';
-  DB.cfg.total=clampN(info.total,10,100,100);
+  DB.cfg.total=clampN(info.total,10,totCap(),100);
   DB.cfg.winners=clampN(info.winners,1,10,1);
   DB.cfg.elims=clampN(info.elims,0,30,2);
   DB.cfg.bigLast=info.big_last!==false;
@@ -1784,6 +1804,7 @@ async function enterBuyerCloud(code){
 }
 async function cloudLoad(){
   await refreshRaffles();
+  if(EDITION==='vip'&&CLOUD_PLAN!=='vip')throw new Error('PLAN_REQUIRED');
   var last=null;try{last=localStorage.getItem('sorteo_cloud_last');}catch(e){}
   var pick=CLOUD_LIST.find(function(r){return r.id===last;})||CLOUD_LIST[0];
   if(!pick){await cloudCreateRaffle('Mi rifa');await refreshRaffles();pick=CLOUD_LIST[0];}
@@ -2427,10 +2448,11 @@ function applyResult(i,pick){
 
 function updateLocks(){
   var lock=started();
-  $('dMin').disabled=lock;$('dPlus').disabled=lock;
-  $('firstMult').disabled=lock;
-  $('countdown').disabled=lock;
-  ['wMin','wPlus','eMin','ePlus','bigLast'].forEach(function(id){$(id).disabled=lock;});
+  var fx=fxNow();
+  $('dMin').disabled=lock||fx;$('dPlus').disabled=lock||fx;
+  $('firstMult').disabled=lock||fx;
+  $('countdown').disabled=lock||fx;
+  ['wMin','wPlus','eMin','ePlus','bigLast'].forEach(function(id){$(id).disabled=lock||fx;});
   $('open').disabled=busy||countingDown;
   $('openSim').disabled=lock;
   var noMore=drawn.length>=seq.length||pool().length<seq.length;
@@ -3150,19 +3172,11 @@ $('tSample').addEventListener('click',function(){
   buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');updateStats();
   showMsg('m2','Se cargaron '+DB.cfg.total+' participantes de ejemplo.','ok');
 });
+/* Borrar todos: solo limpia el texto pegado en la ventana de carga masiva (no toca la tabla) */
 $('tDel').addEventListener('click',function(){
-  if(locked()){showMsg('m2','Reinicia el sorteo para borrar participantes.','er');return;}
-  var b=$('tDel');
-  if(b.dataset.arm!=='1'){
-    b.dataset.arm='1';b.textContent='Toca de nuevo para confirmar';
-    delTimer=setTimeout(function(){b.dataset.arm='';b.textContent='Borrar todos';},4000);
-    return;
-  }
-  clearTimeout(delTimer);b.dataset.arm='';b.textContent='Borrar todos';
-  DB.people={};DB.sample=false;save();selN=null;
-  $('f2').classList.remove('on');
-  buildPGrid($('g2'),'admin');buildPGrid($('g1'),'pick');updateStats();
-  syncOp(function(){return cloudDeleteAll();},'m2','Todos los participantes fueron borrados.');
+  $('imp').value='';
+  $('fileIn').value='';
+  showMsg('m2','Se borró el texto pegado. Los participantes de la tabla no cambiaron.','ok');
 });
 $('rfCodeSave').addEventListener('click',function(){
   var c=$('rfCode').value.trim().toUpperCase();
@@ -3180,7 +3194,7 @@ $('rNameSave').addEventListener('click',function(){
 });
 $('totSave').addEventListener('click',function(){
   if(busy||drawn.length>0){showMsg('mTot','Hay un sorteo en curso. Reinicia para cambiar la cantidad.','er');return;}
-  var maxN=100;
+  var maxN=totCap();
   var raw=parseInt($('totN').value,10);
   if(raw>maxN){showMsg('mTot','El límite es de '+maxN+' números.','er');return;}
   var v=clampN($('totN').value,10,maxN,DB.cfg.total);
@@ -3464,9 +3478,17 @@ $('evSave').addEventListener('click',function(){
 
 /* ---------- Acceso del administrador ---------- */
 function showLogin(){$('lg').classList.add('on');$('lgMsg').textContent='';}
+function planBlock(){
+  sess=null;storeSess();adminOK=false;
+  showLogin();
+  $('lgMsg').classList.add('er');$('lgMsg').style.color='';
+  $('lgMsg').textContent='Esta app VIP requiere una cuenta con plan VIP. Usa la APK gratuita o activa tu plan VIP.';
+}
 function afterLogin(){
   $('lg').classList.remove('on');
   adminOK=true;
+  applyEdition();
+  applyTotCap();
   document.body.classList.add('adm-main');
   $('codeBtn').style.display='none';
   init();
@@ -3481,6 +3503,7 @@ $('modeAdm').addEventListener('click',async function(){
   if(!sess){showLogin();return;}
   try{await cloudLoad();afterLogin();}
   catch(e){
+    if(e.message==='PLAN_REQUIRED'){planBlock();return;}
     sess=null;storeSess();showLogin();
     $('lgMsg').classList.add('er');$('lgMsg').style.color='';
     $('lgMsg').textContent='No pudimos abrir tu cuenta. Entra de nuevo.';
@@ -3561,6 +3584,7 @@ $('lgGo').addEventListener('click',async function(){
     if(pendingPt){pendingPt=false;$('lg').classList.remove('on');ptStart();return;}
     await cloudLoad();afterLogin();
   }catch(e){
+    if(e.message==='PLAN_REQUIRED'){planBlock();return;}
     var msg=e.message||'';
     if(/already registered|already exists/i.test(msg))msg='Ese correo ya tiene cuenta. Entra con tu contraseña.';
     else if(/not confirmed/i.test(msg))msg='Confirma tu correo primero (revisa tu bandeja de entrada).';
@@ -4070,6 +4094,16 @@ if(TOKEN){
   else ptStart();
 }else{
   startAdmin();
+}
+/* Versión gratuita (o web con cuenta gratuita): lo que se ve pero no se puede cambiar */
+function applyEdition(){
+  if(!fxNow())return;
+  $('edNote').style.display='';
+  ['dMin','dPlus','wMin','wPlus','eMin','ePlus','bigLast','firstMult','countdown','colWin','colOut','colCell','colReset'].forEach(function(id){
+    var el=$(id);if(el)el.disabled=true;
+  });
+  var q=$('saleQuota');
+  if(q){q.innerHTML='<option value="1" selected>1</option>';q.disabled=true;}
 }
 </script>
 </body>

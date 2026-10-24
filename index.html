@@ -1523,16 +1523,19 @@ function remoteStop(){
 }
 function applyGameBanner(){
   var on=gameRunning(),susp=on&&gameSuspended();
+  /* Juego a medias sin marca de juego en curso (por ejemplo, de una versión anterior): se puede reiniciar */
+  var incomplete=!on&&CLOUD&&adminOK&&Array.isArray(DB.draws)&&DB.draws.length>0&&typeof seq!=='undefined'&&DB.draws.length<seq.length;
+  var show=on||incomplete;
   var host=GAME_HOST||'otro dispositivo';
-  var text=!on?'':(susp?'El juego se suspendió temporalmente: '+host+' dejó de responder. La única forma de volver es reiniciar el juego.':
+  var text=incomplete?'Este sorteo quedó incompleto: hay resultados guardados y ya no hay un juego en curso. Para volver a empezar, reinícialo.':!on?'':(susp?'El juego se suspendió temporalmente: '+host+' dejó de responder. La única forma de volver es reiniciar el juego.':
     (RUNNING_HERE?'Juego en curso en esta '+(hostName()==='web'?'web':hostName())+'. La configuración queda bloqueada hasta que termine.':
     'Juego en curso desde '+host+'. Para verlo o controlarlo, abre la '+host+'. La configuración queda bloqueada hasta que termine.'));
   ['','R'].forEach(function(k){
     var b=$('gameBan'+k),row=$('gbRow'+k);
-    if(b){b.style.display=on?'':'none';b.textContent=text;}
-    if(row)row.style.display=on?'':'none';
+    if(b){b.style.display=show?'':'none';b.textContent=text;}
+    if(row)row.style.display=show?'':'none';
     var v=$('gbView'+k);if(v)v.style.display=(on&&RUNNING_HERE)?'':'none';
-    var r=$('gbRestart'+k);if(r)r.style.display=on?'':'none';
+    var r=$('gbRestart'+k);if(r)r.style.display=show?'':'none';
   });
   if(susp&&!SUSP_SEEN){SUSP_SEEN=true;showInfo('AVISO','El juego se suspendió temporalmente',''+host+' dejó de responder. Para volver, reinicia el juego.');}
 }
@@ -2986,7 +2989,7 @@ stGo.addEventListener('click',startCountdown);
 $('stBack').addEventListener('click',closeStage);
 ['','R'].forEach(function(k){
   $('gbView'+k).addEventListener('click',function(){pn.classList.remove('on');openStage();});
-  $('gbRestart'+k).addEventListener('click',askRestart);
+  $('gbRestart'+k).addEventListener('click',function(){$('rsOv').classList.add('on');});
 });
 $('reset').addEventListener('click',askRestart);
 $('rsStart').addEventListener('click',askRestart);

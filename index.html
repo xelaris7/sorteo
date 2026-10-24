@@ -242,6 +242,7 @@ body.ptmode #buyClose{display:none}
 body.buyer #go,body.buyer #reset,body.buyer #open,body.buyer:not(.watch) .stage,body.buyer .pn:not(#buyPn):not(#minePn){display:none!important}
 body.watch #stGo,body.watch #stBack{display:none!important}
 body.watch #grid{pointer-events:none}
+body.mirror.watch #stBack{display:inline-block!important}
 body.watch #ovBtn{display:none!important}
 body.buyer #codeBtn{display:none}
 body:not(.buyer) #exitBuyer{display:none}
@@ -1476,6 +1477,7 @@ function gameRunning(){return !!(GAME_AT&&(Date.now()-GAME_AT)<6*60*60*1000);}
 function applyGameLock(){
   var on=gameRunning();
   applyGameBanner();
+  if(on&&!RUNNING_HERE){var g0=$('go');if(g0)g0.disabled=true;}
   var els=document.querySelectorAll('#vCfg input,#vCfg select,#vCfg textarea,#vCfg button,#evDate,#evTime,#evPlat,#evAcc,#evSave,#prImg');
   Array.prototype.forEach.call(els,function(el){
     if(on){if(!el.disabled){el.disabled=true;el.dataset.gameLock='1';}}
@@ -1492,6 +1494,7 @@ function sendHeartbeat(){
   adminReq('PATCH','/rest/v1/raffles?id=eq.'+RID,{game_heartbeat:new Date().toISOString(),game_host:hostName()},{Prefer:'return=minimal'}).catch(function(){});
 }
 function hostBegin(){
+  stopMirror();
   RUNNING_HERE=true;GAME_HOST=hostName();
   if(HB_TIMER)clearInterval(HB_TIMER);
   HB_TIMER=setInterval(sendHeartbeat,15000);
@@ -1777,6 +1780,8 @@ async function cloudRefreshRaffle(){
   GAME_HOST=r.game_host||null;
   GAME_HB=r.game_heartbeat?Date.parse(r.game_heartbeat):null;
   GAME_AT=remoteAt;
+  if(GAME_AT&&!RUNNING_HERE&&!gameSuspended()){startMirror();}
+  else{stopMirror();}
   if(busy||countingDown||locked()){
     applyGameLock();
     return;
@@ -2102,16 +2107,34 @@ var LIVE_TIMERS=[];
 function laterLive(fn,ms){LIVE_TIMERS.push(setTimeout(fn,ms));}
 function clearLiveTimers(){LIVE_TIMERS.forEach(clearTimeout);LIVE_TIMERS=[];}
 function liveStopPoll(){if(LIVE_POLL){clearInterval(LIVE_POLL);LIVE_POLL=null;}clearLiveTimers();}
+/* Pantalla duplicada: un segundo dispositivo del administrador sigue el juego que corre en otro dispositivo de la cuenta */
+var MIRROR_ADM=false;
+function startMirror(){
+  if(MIRROR_ADM)return;
+  MIRROR_ADM=true;
+  document.body.classList.add('mirror');
+  liveStartPoll();
+  openStage();
+}
+function stopMirror(){
+  if(!MIRROR_ADM)return;
+  MIRROR_ADM=false;
+  liveStopPoll();
+  document.body.classList.remove('mirror','watch');
+  $('stage').classList.remove('on');
+}
 function liveStartPoll(){
   liveStopPoll();LIVE_V=null;LIVE_N=0;LIVE_LAST=null;
   LIVE_POLL=setInterval(livePoll,1000);
   livePoll();
 }
 async function livePoll(){
-  if(!BUY_CODE||!document.body.classList.contains('buyer'))return;
+  var mirror=MIRROR_ADM;
+  var code=mirror?codeNow():BUY_CODE;
+  if(!code||(!mirror&&!document.body.classList.contains('buyer')))return;
   var info=null;
-  try{info=await sbReq('POST','/rest/v1/rpc/raffle_by_code',{p_code:BUY_CODE},null,true);}catch(e){return;}
-  if(!info||!info.valid||!document.body.classList.contains('buyer'))return;
+  try{info=await sbReq('POST','/rest/v1/rpc/raffle_by_code',{p_code:code},null,true);}catch(e){return;}
+  if(!info||!info.valid||(!mirror&&!document.body.classList.contains('buyer')))return;
   var recv=Date.now();
   applyNames(info.names);
   applyCard(info);
@@ -2589,7 +2612,7 @@ function updateLocks(){
   $('open').disabled=busy||countingDown;
   $('openSim').disabled=lock;
   var noMore=drawn.length>=seq.length||pool().length<seq.length;
-  go.disabled=noMore;
+  go.disabled=noMore||(gameRunning()&&!RUNNING_HERE);
   $('reset').disabled=false;
   stGo.disabled=busy||countingDown||noMore;
   stGo.style.display=go.style.display;
@@ -2891,6 +2914,7 @@ function openStage(){$('stage').classList.add('on');fitGrid();}
 function closeStage(){$('stage').classList.remove('on');}
 function startCountdown(){
   if(busy||countingDown||drawn.length>=seq.length||pool().length<seq.length)return;
+  if(gameRunning()&&!RUNNING_HERE){showInfo('AVISO','Hay un juego en curso','Ese juego se controla desde '+(GAME_HOST||'otro dispositivo')+'. Para iniciar uno nuevo, reinícialo primero.');return;}
   if(CLOUD&&adminOK)gameBegin();
   var cd=DB.cfg.countdown,plan=makePlan(),D=cd*1000,ev=[],i;
   for(i=0;i<cd;i++)ev.push([i*1000,'cd',cd-i]);
@@ -2909,6 +2933,7 @@ function askRestart(){
 function doRestart(){
   $('rsOv').classList.remove('on');
   hostEnd();
+  stopMirror();
   busy=false;
   /* Antes de reiniciar se detiene la transmisión del sorteo anterior */
   ADM.ev=[];ADM.want=0;ADM.sent=0;
@@ -2999,7 +3024,7 @@ $('rsYes').addEventListener('click',doRestart);
 /* ---------- Panel de participantes ---------- */
 var pn=$('pn'),pnMode='cfg',selN=null,adminOK=false,delTimer=null;
 function showMsg(id,t,cls){var e=$(id);e.textContent=t||'';e.className='msg'+(cls?' '+cls:'');}
-function locked(){return drawn.length>0;}
+function locked(){return drawn.length>0||gameRunning();}
 function updateStats(){
   var t=pool().length;
   var s='Números asignados: '+t+' · Números disponibles: '+(DB.cfg.total-t);

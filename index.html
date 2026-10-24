@@ -3100,6 +3100,16 @@ function startPoll(){
   },8000);
 }
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+/* Pantalla principal del administrador: revisa cada 8 s si hay un juego en curso (en esta u otra versión) para mostrar el aviso y los botones */
+var GAME_POLL=null;
+function startGamePoll(){
+  if(GAME_POLL)clearInterval(GAME_POLL);
+  GAME_POLL=setInterval(function(){
+    if(!CLOUD||!RID||!adminOK||pn.classList.contains('on'))return;
+    cloudRefreshRaffle().catch(function(){});
+  },8000);
+  if(CLOUD&&RID)cloudRefreshRaffle().catch(function(){});
+}
 document.addEventListener('visibilitychange',function(){
   if(document.visibilityState==='visible'&&CLOUD&&pn.classList.contains('on'))cloudRefreshRaffle().catch(function(){});
 });
@@ -3630,6 +3640,7 @@ function afterLogin(){
   $('codeBtn').style.display='none';
   init();
   setSync('Conectado a Supabase');
+  startGamePoll();
 }
 function showModePick(){
   $('lg').classList.remove('on');

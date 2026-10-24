@@ -85,6 +85,7 @@ button.primary{background:var(--fill-accent);color:var(--on-accent);border-color
 .cell{height:34px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--c-cell);color:var(--c-cell-fg);user-select:none;-webkit-user-select:none}
 .cell.free{opacity:0.35}
 .cell.seen{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.cell.mine{outline:3px solid #ff2e88;outline-offset:-3px;z-index:1}
 .cell.live{background:var(--fill-accent);color:var(--on-accent);border-color:var(--fill-accent);font-weight:700}
 /* Números ya sorteados: se tachan y se distinguen por color.
    Eliminado = cuadro con X roja y borde rojo intenso (el número sigue visible).
@@ -309,6 +310,11 @@ body:not(.buyer) #exitBuyer{display:none}
   .rf-acts.three>button:last-child{grid-column:auto!important;justify-self:auto!important;width:auto!important}
 }
 
+/* Casilla de último a primer premio: recuadro a la izquierda y texto a la derecha */
+@media (min-width:900px){
+  .opts>label.chk{width:100%!important;justify-content:space-between!important}
+}
+
 /* ===== Tema "juego" (vista previa) ===== */
 :root{
   --bg:#120b33;--text:#fff8e7;--text2:#c7bde8;
@@ -361,11 +367,15 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
 .tabs button{background:#211a5a}
 .tabs button.on,.tabs button[aria-selected="true"]{background:linear-gradient(180deg,#ffc53d,#ff9f1c);color:#2a1300;border-color:#ffe08a}
 
+/* ===== Cuadros por sección ===== */
+.secbox{background:var(--surface1);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.28);padding:4px 14px 14px;margin:16px 0;text-align:left}
+.secbox>.sec:first-child{margin-top:12px}
 /* ===== Configuración y Registrar: textos a la izquierda, controles a la derecha; botones 2 arriba y 1 centrado abajo ===== */
 .opts{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 12px}
 .opts>label{justify-self:start}
 .opts>.step,.opts>input[type=color],.opts>select{justify-self:end}
-.opts>label.chk{grid-column:1 / -1;justify-self:start}
+.opts>label.chk{grid-column:1 / -1;justify-self:stretch;justify-content:space-between;width:100%}
+.chk span{text-align:right}
 .tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .tools>button{width:100%;margin:0}
 .tools.tools-c{display:flex;justify-content:center}
@@ -570,7 +580,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
       <div class="step"><button id="eMin" aria-label="Menos eliminados">−</button><span class="val" id="eVal">2</span><button id="ePlus" aria-label="Más eliminados">+</button></div>
     </div>
     <div class="opts">
-      <label class="chk"><input type="checkbox" id="bigLast"> Sortear de último a primer premio</label>
+      <label class="chk"><input type="checkbox" id="bigLast"><span>Sortear de último a primer premio</span></label>
     </div>
     <div class="opts">
       <label for="firstMult">Tiempo del primer premio</label>
@@ -685,8 +695,8 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
     <div class="row" style="margin-top:8px"><button class="danger-btn" id="rdGo">Quitar rango</button></div>
     <p class="msg" id="mRd"></p>
 
-    <p class="sec">Carga masiva y edición</p>
     <div class="form" id="f2">
+      <p class="sec" style="margin-top:0">Carga masiva y edición</p>
       <p class="ttl" id="f2t"></p>
       <input class="inp" id="f2n" placeholder="Nombre completo: 2 nombres y 2 apellidos" maxlength="80" autocomplete="off">
       <input class="inp" id="f2p" placeholder="Celular (ej. 0991234567)" maxlength="15" inputmode="tel">
@@ -1945,7 +1955,11 @@ function admTick(){
   if(k>=ADM.ev.length&&ADM.iv){clearInterval(ADM.iv);ADM.iv=null;}
 }
 /* Compradores: lectura periódica del guion y de los resultados */
-function liveStopPoll(){if(LIVE_POLL){clearInterval(LIVE_POLL);LIVE_POLL=null;}}
+/* Eventos del sorteo para quien mira: lista propia, para que init() (que se llama entre rondas) no los cancele */
+var LIVE_TIMERS=[];
+function laterLive(fn,ms){LIVE_TIMERS.push(setTimeout(fn,ms));}
+function clearLiveTimers(){LIVE_TIMERS.forEach(clearTimeout);LIVE_TIMERS=[];}
+function liveStopPoll(){if(LIVE_POLL){clearInterval(LIVE_POLL);LIVE_POLL=null;}clearLiveTimers();}
 function liveStartPoll(){
   liveStopPoll();LIVE_V=null;LIVE_N=0;LIVE_LAST=null;
   LIVE_POLL=setInterval(livePoll,1000);
@@ -1988,7 +2002,7 @@ async function livePoll(){
   LIVE_TOT=L.tot||LIVE_TOT;
   var ev=L.ev||[];
   for(;LIVE_N<ev.length;LIVE_N++){
-    (function(e){later(function(){playEv(e,false);},Math.max(0,e[0]-liveNowRel()));})(ev[LIVE_N]);
+    (function(e){laterLive(function(){playEv(e,false);},Math.max(0,e[0]-liveNowRel()));})(ev[LIVE_N]);
   }
 }
 /* Nombres solo de los números ya sorteados (ganadores y eliminados) */
@@ -2000,7 +2014,7 @@ function applyNames(list){
 }
 /* Números propios del comprador con enlace de venta (los confirma el servidor) */
 function myNumbers(){return BUY_TOKEN?MINE_SRV.slice():[];}
-function saveMine(nums){MINE_SRV=(nums||[]).map(Number).sort(function(a,b){return a-b;});renderMineBtn();}
+function saveMine(nums){MINE_SRV=(nums||[]).map(Number).sort(function(a,b){return a-b;});renderMineBtn();markMine();}
 function isMine(n){return myNumbers().indexOf(n)>=0;}
 function renderMineBtn(){
   var b=$('mineBtn');if(!b)return;
@@ -2156,6 +2170,7 @@ function askNotifPerm(){
   }catch(e){}
 }
 function liveReset(){
+  clearLiveTimers();
   if(ov.classList.contains('on'))closeReveal();
   if(LIVE_BAR){clearInterval(LIVE_BAR);LIVE_BAR=null;}
   document.body.classList.remove('watch');$('stage').classList.remove('on');
@@ -2189,6 +2204,7 @@ function playEv(e,isAdm){
     $('sub').textContent='Todos los números siguen en juego.';
     stGo.textContent='SORTEANDO EN '+n;
   }else if(k==='start'){
+    if(!isAdm&&!document.body.classList.contains('watch')){document.body.classList.add('watch');openStage();}
     countingDown=false;busy=true;SND.start();updateLocks();
     var s=seq[drawn.length];
     if(!s)return;
@@ -2213,6 +2229,7 @@ function playEv(e,isAdm){
     var sRes=seq[DB.draws.length];
     if(DB.draws.indexOf(n)<0)DB.draws.push(n);
     var m=DB.draws.length-1;
+    if(!isAdm&&DB.draws.length>=seq.length)DRAW_ON=false;
     init();
     var mine=!isAdm&&isMine(n);
     if(mine)alertMine(n,sRes);
@@ -2230,7 +2247,7 @@ function playEv(e,isAdm){
 
 /* ---------- Estado del sorteo ---------- */
 var countingDown=false,cdLeft=0;
-var remaining=[],drawn=[],busy=false,cells=[],timers=[],seq=[],status={},tipN=null,tipTimer=null;
+var remaining=[],drawn=[],busy=false,cells=[],timers=[],seq=[],cellStatus={},tipN=null,tipTimer=null;
 var root=$('root'),tip=$('tip');
 var grid=$('grid'),big=$('big'),go=$('go'),stGo=$('stGo'),bar=$('bar');
 var ov=$('ov'),cv=$('cv'),ctx=cv.getContext('2d');
@@ -2277,7 +2294,7 @@ function seqLabel(s){return s.t==='out'?'eliminado '+s.k:prizeName(s.p).toLowerC
 
 function showTip(el,n){
   tipN=n;
-  var st=status[n]?' · '+status[n]:'';
+  var st=cellStatus[n]?' · '+cellStatus[n]:'';
   tip.textContent=n+' · '+(DB.people[n]?DB.people[n].name:'Libre')+st;
   tip.style.display='block';
   /* Cuadro pequeño, centrado horizontalmente y a la altura del número */
@@ -2307,7 +2324,13 @@ function build(){
     d.textContent=n;d.dataset.n=n;
     grid.appendChild(d);cells[n]=d;
   });
+  markMine();
   fitGrid();
+}
+/* Contorno para los números propios del comprador */
+function markMine(){
+  var mine=myNumbers();
+  cells.forEach(function(c,n){if(c)c.classList.toggle('mine',mine.indexOf(n)>=0);});
 }
 grid.addEventListener('click',function(e){
   var c=e.target.closest('.cell');
@@ -2338,7 +2361,7 @@ function applyResult(i,pick){
   var k=remaining.indexOf(pick);
   if(k>=0)remaining.splice(k,1);
   drawn.push(pick);
-  status[pick]=s.t==='out'?'Eliminado '+s.k:prizeName(s.p);
+  cellStatus[pick]=s.t==='out'?'Eliminado '+s.k:prizeName(s.p);
   cells[pick].classList.add(s.t==='out'?'out':'win');
 }
 
@@ -2458,7 +2481,7 @@ function init(noRestore){
   timers.forEach(clearTimeout);timers=[];
   busy=false;countingDown=false;hideTip();
   buildSeq();
-  remaining=pool();drawn=[];status={};
+  remaining=pool();drawn=[];cellStatus={};
   build();
   bar.style.width='0';
   if(noRestore){DB.draws=[];save();}
@@ -2597,7 +2620,7 @@ function closeReveal(){
   SND.stop();
   if(BUY_AUTO){clearTimeout(BUY_AUTO);BUY_AUTO=null;}
   ov.classList.remove('on');
-  if(document.body.classList.contains('watch')){document.body.classList.remove('watch');$('stage').classList.remove('on');}
+  if(document.body.classList.contains('watch')&&!DRAW_ON){document.body.classList.remove('watch');$('stage').classList.remove('on');}
   winActive=false;parts=[];
   if(raf){cancelAnimationFrame(raf);raf=null;}
   busy=false;
@@ -3227,7 +3250,7 @@ function copySaleText(t){
   catch(e){$('saleLink').select();}
 }
 function saleText(token,quota){
-  return 'Participa en la rifa «'+(DB.cfg.name||'')+'». Debes elegir exactamente '+quota+(quota===1?' número':' números')+'.\nAbre este enlace: '+APP_URL+'?s='+token+'\nAl abrirlo escribe el código de la rifa: '+(codeNow()||'—')+' y toca Entrar.';
+  return 'Rifa «'+(DB.cfg.name||'')+'» · Código de la rifa: '+(codeNow()||'—')+' · Debes elegir exactamente '+quota+(quota===1?' número':' números')+'. Abre este enlace y escribe el código de la rifa: '+APP_URL+'?s='+token;
 }
 async function loadSales(){
   if(!CLOUD||!RID)return;
@@ -3695,7 +3718,7 @@ function ticketUrl(t){
   if(t.sale)q.push('s='+encodeURIComponent(t.sale));
   q.push('n='+encodeURIComponent(String(t.number).replace(/\s+/g,'')));
   q.push('p='+encodeURIComponent([t.name||'',t.phone||'',t.email||''].join('|')));
-  return APP_URL+'?'+q.join('&');
+  return APP_URL+'abrir.html?'+q.join('&');
 }
 function drawTicket(c,t){
   var W=800,H=2000,g=c.getContext('2d');
@@ -3944,6 +3967,29 @@ $('tkDl').addEventListener('click',function(){
 });
 
 /* ---------- Arranque ---------- */
+/* Cada sección de las pestañas se muestra dentro de su propio cuadro */
+function boxify(root){
+  var box=null;
+  Array.from(root.children).forEach(function(el){
+    if(el.tagName==='DIV'&&el.querySelector('p.sec')){box=null;boxify(el);return;}
+    if(el.tagName==='P'&&el.classList.contains('sec')){
+      box=document.createElement('div');box.className='secbox';
+      root.insertBefore(box,el);box.appendChild(el);return;
+    }
+    if(box)box.appendChild(el);
+  });
+}
+['vRifas','vCfg','vPick','vAdmin'].forEach(function(id){boxify($(id));});
+/* Enlace del boleto: si la app está instalada en el celular, la abre (esquema rifaxs://) */
+(function(){
+  var C=window.Capacitor,A=C&&C.Plugins&&C.Plugins.App;
+  if(!A||!A.addListener)return;
+  function abrir(url){
+    try{var u=new URL(url);if(u.protocol!=='rifaxs:')return;if(u.search&&u.search!==location.search)location.search=u.search;}catch(e){}
+  }
+  A.addListener('appUrlOpen',function(d){abrir(d&&d.url);});
+  if(A.getLaunchUrl)A.getLaunchUrl().then(function(r){if(r&&r.url)abrir(r.url);}).catch(function(){});
+})();
 if(TOKEN){
   document.body.classList.add('ptmode');
   loadSess();

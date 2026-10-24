@@ -124,8 +124,8 @@ button.primary{background:var(--fill-accent);color:var(--on-accent);border-color
 .pg .cell.tkp{opacity:1;background:linear-gradient(180deg,#8a2f45,#5a1b2d);color:#ffd9e0;border:1px solid #c9566f;cursor:not-allowed}
 .pg .cell:not(.tkp){background:linear-gradient(180deg,#eafff5,#9fe6c4);color:#0c3b28;border:1px solid #5fcf9c;font-weight:700}
 /* PARTICIPANTES y REGISTRAR: libres en verde y ocupados/seleccionados en dorado (colores distintos) */
-#g1 .cell:not(.tk),#g2 .cell:not(.tk){background:linear-gradient(180deg,#5cf0b0,#1fb874)!important;color:#04241a!important;border:1px solid #b6ffdf!important;font-weight:700}
-#g1 .cell.tk,#g2 .cell.tk{background:linear-gradient(180deg,#ffe38a,#f0a500)!important;color:#2a1600!important;border:1px solid #fff1b8!important;font-weight:700}
+#g1 .cell:not(.tk),#g2 .cell:not(.tk),#pg2 .cell:not(.tk){background:linear-gradient(180deg,#5cf0b0,#1fb874)!important;color:#04241a!important;border:1px solid #b6ffdf!important;font-weight:700}
+#g1 .cell.tk,#g2 .cell.tk,#pg2 .cell.tk{background:linear-gradient(180deg,#ffe38a,#f0a500)!important;color:#2a1600!important;border:1px solid #fff1b8!important;font-weight:700}
 .cell.sel{outline:3px solid var(--fill-accent);outline-offset:1px;font-weight:700}
 .inp{width:100%;display:block;margin-bottom:8px}
 textarea.inp{min-height:110px;padding:10px 12px;resize:vertical}
@@ -395,7 +395,7 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
 .rf-acts>button{width:100%;margin:0}
 .rf-acts.three>button:last-child{grid-column:1 / -1;justify-self:center;width:calc(50% - 4px)}
 /* Pantalla principal del administrador: solo ENTRAR; INICIAR y Reiniciar están dentro de ENTRAR (panel) */
-body.adm-main #open,body.adm-main #go,body.adm-main #reset{display:none!important}
+body #open,body #go,body #reset{display:none!important}
 #admRun{display:none}
 body.adm-main #admRun{display:block!important}
 </style>
@@ -501,6 +501,7 @@ body.adm-main #admRun{display:block!important}
   <h1>Participantes</h1>
   <p class="hint" id="partSub"></p>
   <div id="partList"></div>
+  <div id="pwrap" style="position:relative;display:none"><div class="grid pg" id="pg2"></div><div class="tip" id="pTip"></div></div>
 </div></div>
 <div class="pn" id="pn"><div class="pn-in">
   <div class="pn-head">
@@ -2068,13 +2069,18 @@ $('mineClose').addEventListener('click',function(){$('minePn').classList.remove(
 /* PARTICIPANTES (solo participantes): lista de solo lectura con números libres y ocupados; nombre y primer apellido */
 function renderPartBtn(){
   var r=$('partRow');if(!r)return;
-  var show=document.body.classList.contains('buyer');
+  var show=document.body.classList.contains('buyer')||document.body.classList.contains('demo');
   r.style.display=show?'':'none';
   if(!show)$('partPn').classList.remove('on');
 }
 function openPart(){
   var list=$('partList');list.innerHTML='';
+  list.style.display='';$('pwrap').style.display='none';
   var T=DB.cfg.total||0,taken=0;
+  if(document.body.classList.contains('demo')){
+    buildPartGrid();
+    return;
+  }
   for(var n=1;n<=T;n++){
     var p=DB.people[n],name=p&&p.name?basicName(p.name):'';
     if(name)taken++;
@@ -2084,6 +2090,36 @@ function openPart(){
     row.appendChild(c);row.appendChild(t);list.appendChild(row);
   }
   $('partSub').textContent=taken+' ocupados · '+(T-taken)+' libres de '+T+'. Solo lectura.';
+}
+/* Vista sin código: cuadrícula de solo lectura; vendidos en dorado y libres en verde; 1 nombre y 1 apellido */
+var pTipT=null;
+function showPartTip(el,n){
+  var t=$('pTip'),w=$('pwrap');
+  var p=DB.people[n];
+  t.textContent=n+' · '+(p&&p.name?basicName(p.name):'Libre');
+  t.style.display='block';
+  var r=el.getBoundingClientRect(),rr=w.getBoundingClientRect();
+  var tw=t.offsetWidth,th=t.offsetHeight;
+  t.style.left=Math.max(4,Math.min(rr.width-tw-4,r.left-rr.left+r.width/2-tw/2))+'px';
+  t.style.top=Math.max(4,r.top-rr.top-th-8)+'px';
+  if(pTipT)clearTimeout(pTipT);
+  pTipT=setTimeout(function(){t.style.display='none';},2500);
+}
+function buildPartGrid(){
+  var c=$('pg2');c.innerHTML='';
+  var T=DB.cfg.total||0,sold=0;
+  for(var i=1;i<=T;i++){
+    var p=DB.people[i],has=!!(p&&p.name);
+    if(has)sold++;
+    var d=document.createElement('div');
+    d.className='cell'+(has?' tk':'');
+    d.textContent=i;d.dataset.n=i;c.appendChild(d);
+  }
+  c.onclick=function(e){var el=e.target.closest('.cell');if(el)showPartTip(el,parseInt(el.dataset.n,10));};
+  c.onmouseover=function(e){var el=e.target.closest('.cell');if(el)showPartTip(el,parseInt(el.dataset.n,10));};
+  $('partList').style.display='none';
+  $('pwrap').style.display='block';
+  $('partSub').textContent='Números asignados: '+sold+' · Números disponibles: '+(T-sold)+'. Solo lectura.';
 }
 $('partBtn').addEventListener('click',function(){openPart();$('partPn').classList.add('on');});
 $('partClose').addEventListener('click',function(){$('partPn').classList.remove('on');});
@@ -3482,7 +3518,9 @@ function enterDemo(){
   DB.sample=true;
   $('codeBtn').style.display='';
   $('mineBtn').style.display='none';
+  setSync('Vista de ejemplo: datos ficticios');
   init();
+  renderPartBtn();
 }
 $('modePt').addEventListener('click',function(){
   $('modeOv').classList.remove('on');

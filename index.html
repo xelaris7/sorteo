@@ -566,6 +566,7 @@ button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;
   <div class="warn" id="pWarn"></div>
 
 
+  <p class="note on" id="gameBan" style="display:none;margin:10px 0">Hay un juego en curso. La información y la configuración de la rifa se bloquean hasta que termine; después podrás editarlas otra vez.</p>
   <div id="vRifas" style="display:none">
     <div class="note on" id="planTxt"></div>
     <p class="sec">Mis rifas en este teléfono</p>
@@ -1462,6 +1463,28 @@ function fxNow(){return EDITION==='free'||(EDITION==='web'&&CLOUD_PLAN!=='vip');
 function planNow(){return fxNow()?'free':'vip';}
 /* Tope de números: gratuita y web gratuita 100; VIP hasta 1000 */
 function totCap(){return fxNow()?100:1000;}
+/* Juego en curso: inicio guardado en la base (game_started_at). Dura como máximo 6 horas por seguridad. */
+var GAME_AT=null;
+function gameRunning(){return !!(GAME_AT&&(Date.now()-GAME_AT)<6*60*60*1000);}
+function applyGameLock(){
+  var on=gameRunning();
+  var ban=$('gameBan');if(ban)ban.style.display=on?'':'none';
+  var els=document.querySelectorAll('#vCfg input,#vCfg select,#vCfg textarea,#vCfg button,#evDate,#evTime,#evPlat,#evAcc,#evSave,#prImg');
+  Array.prototype.forEach.call(els,function(el){
+    if(on){if(!el.disabled){el.disabled=true;el.dataset.gameLock='1';}}
+    else if(el.dataset.gameLock){el.disabled=false;delete el.dataset.gameLock;}
+  });
+}
+function gameBegin(){
+  if(!CLOUD||!RID)return;
+  GAME_AT=Date.now();applyGameLock();
+  adminReq('PATCH','/rest/v1/raffles?id=eq.'+RID,{game_started_at:new Date(GAME_AT).toISOString()},{Prefer:'return=minimal'}).catch(function(e){setSync('No se pudo marcar el juego: '+e.message,true);});
+}
+function gameEnd(){
+  if(!CLOUD||!RID)return;
+  GAME_AT=null;applyGameLock();
+  adminReq('PATCH','/rest/v1/raffles?id=eq.'+RID,{game_started_at:null},{Prefer:'return=minimal'}).catch(function(e){setSync('No se pudo cerrar el juego: '+e.message,true);});
+}
 function applyTotCap(){var c=totCap();var i=$('totN');if(i)i.max=c;var t=$('totMax');if(t)t.textContent=c;}
 function renderCreator(){}
 
@@ -1656,12 +1679,17 @@ function codeNow(){
   return e?e.code:null;
 }
 async function cloudLoadRaffle(id){
-  var rs=await adminReq('GET','/rest/v1/raffles?select=id,name,winners,elims,big_last,draws,event,total,photo&id=eq.'+id);
+  var rs=await adminReq('GET','/rest/v1/raffles?select=id,name,winners,elims,big_last,draws,event,total,photo,game_started_at&id=eq.'+id);
   if(!rs||!rs.length)throw new Error('No encontramos la rifa.');
   var r=rs[0];
   RID=r.id;
   try{localStorage.setItem('sorteo_cloud_last',RID);}catch(e){}
   DB=defaults();
+  applyRaffleRow(r);
+  await cloudPullPeople();
+}
+/* Copia la fila de la rifa de Supabase a la app (configuración, premios, sorteos y foto) */
+function applyRaffleRow(r){
   DB.cfg.name=r.name||'';
   DB.cfg.winners=clampN(r.winners,1,10,1);
   DB.cfg.elims=clampN(r.elims,0,30,2);
@@ -1671,8 +1699,27 @@ async function cloudLoadRaffle(id){
   DB.cfg.total=clampN(r.total,10,totCap(),100);
   DB.cfg.photo=r.photo||'';
   PHOTO_SENT=photoHash(DB.cfg.photo);
+  GAME_AT=r.game_started_at?Date.parse(r.game_started_at):null;
   normalizeDB();
+}
+/* Trae de Supabase lo último guardado desde cualquier dispositivo (web o APK). No pisa cambios pendientes de guardar ni un sorteo en curso. */
+async function cloudRefreshRaffle(){
+  if(!CLOUD||!RID||busy||pushTimer||locked())return;
+  var rs=await adminReq('GET','/rest/v1/raffles?select=id,name,winners,elims,big_last,draws,event,total,photo,game_started_at&id=eq.'+RID);
+  if(!rs||!rs.length)return;
+  var wasOn=gameRunning();
+  applyRaffleRow(rs[0]);
+  GAME_AT=rs[0].game_started_at?Date.parse(rs[0].game_started_at):null;
+  if(wasOn!==gameRunning()&&pn.classList.contains('on')){
+    showInfo('AVISO',gameRunning()?'Hay un juego en curso':'El juego terminó',gameRunning()?'La información y la configuración de la rifa quedan bloqueadas hasta que termine.':'Ya puedes editar la información y la configuración de la rifa.');
+  }
+  applyGameLock();
   await cloudPullPeople();
+  var typing=document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  updateStats();
+  if(selN===null)buildPanelGrids();
+  if(pnMode==='cfg'&&!typing)updateCfgUI();
+  if(pnMode==='pick')loadInvites();
 }
 async function cloudOpenRaffle(id){
   try{await cloudLoadRaffle(id);}
@@ -1837,7 +1884,10 @@ async function cloudPushRaffle(){
     var en=CLOUD_LIST.find(function(x){return x.id===RID;});
     if(en)en.name=DB.cfg.name||'Mi rifa';
     setSync('Conectado a Supabase · guardado');
-  }catch(e){setSync('Error al guardar: '+e.message,true);}
+  }catch(e){
+    if(/juego_en_curso/.test(e.message)){showInfo('AVISO','Hay un juego en curso','La configuración no se puede cambiar hasta que el juego termine.');setSync('Juego en curso: configuración bloqueada',true);}
+    else setSync('Error al guardar: '+e.message,true);
+  }
 }
 /* Huella corta de la foto: solo cambia cuando cambia la imagen */
 function photoHash(str){
@@ -2011,6 +2061,18 @@ async function livePoll(){
     try{lv=await sbReq('POST','/rest/v1/rpc/raffle_live_by_token',{p_token:BUY_TOKEN},null,true);}catch(e){lv=null;}
     if(lv&&lv.valid){src=lv;L=lv.live||null;if(Array.isArray(lv.numbers)&&lv.numbers.length)saveMine(lv.numbers);}
   }
+  /* Aviso de reinicio para el participante: se muestra una sola vez, aunque entre después del reinicio.
+     Es solo informativo; el participante no puede oponerse. */
+  if(L&&L.state==='reset'&&L.v&&BUY_CODE){
+    var rk='sorteo_reset_seen_'+BUY_CODE,rseen=null;
+    try{rseen=localStorage.getItem(rk);}catch(e){}
+    if(rseen===null){try{localStorage.setItem(rk,L.v);}catch(e){}}
+    else if(rseen!==L.v){
+      try{localStorage.setItem(rk,L.v);}catch(e){}
+      LIVE_V=L.v;LIVE_N=0;LIVE_LAST=null;
+      liveReset();return;
+    }
+  }
   if(LIVE_V===null){   /* primera lectura: lo que ya estaba en la base no se repite */
     LIVE_V=(L&&L.v)?L.v:'';LIVE_N=(L&&L.ev)?L.ev.length:0;
     return;
@@ -2127,7 +2189,8 @@ function alertMine(n,s){
   var win=!!(s&&s.t==='win');
   var title=win?'¡Tu número salió: GANADOR!':'Tu número salió: eliminado';
   var body=win?(prizeName(s.p)+' · número '+n):('Eliminado '+(s?s.k:'')+' · número '+n);
-  try{if(navigator.vibrate)navigator.vibrate(win?[900,250,900,250,900,250,1800]:[1500,300,1500,300,1500]);}catch(e){}
+  /* Ganador: vibración larga. Eliminado: vibración corta. */
+  try{if(navigator.vibrate)navigator.vibrate(win?[1500]:[300]);}catch(e){}
   notifySystem(title,body);
 }
 /* ---------- Sonidos del sorteo (se generan en el teléfono o usan el MP3 del ganador) ---------- */
@@ -2447,8 +2510,9 @@ function applyResult(i,pick){
 }
 
 function updateLocks(){
-  var lock=started();
+  var lock=started()||gameRunning();
   var fx=fxNow();
+  applyGameLock();
   $('dMin').disabled=lock||fx;$('dPlus').disabled=lock||fx;
   $('firstMult').disabled=lock||fx;
   $('countdown').disabled=lock||fx;
@@ -2707,7 +2771,7 @@ function closeReveal(){
   if(raf){cancelAnimationFrame(raf);raf=null;}
   busy=false;
   /* Al terminar la última ronda el sorteo ya no está en curso */
-  if(drawn.length>=seq.length)DRAW_ON=false;
+  if(drawn.length>=seq.length){DRAW_ON=false;if(CLOUD&&adminOK&&GAME_AT)gameEnd();}
   updateLocks();
 }
 window.addEventListener('resize',function(){
@@ -2757,6 +2821,7 @@ function openStage(){$('stage').classList.add('on');fitGrid();}
 function closeStage(){if(busy||countingDown)return;SND.stop();$('stage').classList.remove('on');}
 function startCountdown(){
   if(busy||countingDown||drawn.length>=seq.length||pool().length<seq.length)return;
+  if(CLOUD&&adminOK)gameBegin();
   var cd=DB.cfg.countdown,plan=makePlan(),D=cd*1000,ev=[],i;
   for(i=0;i<cd;i++)ev.push([i*1000,'cd',cd-i]);
   plan.ev.forEach(function(e){ev.push([e[0]+D,e[1],e[2],e[3]]);});
@@ -2780,6 +2845,7 @@ function doRestart(){
   DRAW_ON=false;
   init(true);
   if(CLOUD&&RID){
+    gameEnd();
     (async function(){
       while(ADM.flight)await new Promise(function(r){setTimeout(r,100);});
       /* Primero se borran los resultados en la base y luego se avisa a los compradores */
@@ -2959,14 +3025,13 @@ function startPoll(){
   if(!CLOUD)return;
   pollTimer=setInterval(function(){
     if(!pn.classList.contains('on')||busy||!RID)return;
-    cloudPullPeople().then(function(){
-      updateStats();
-      if(selN===null)buildPanelGrids();
-      if(pnMode==='pick')loadInvites();
-    }).catch(function(){});
+    cloudRefreshRaffle().catch(function(){});
   },8000);
 }
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible'&&CLOUD&&pn.classList.contains('on'))cloudRefreshRaffle().catch(function(){});
+});
 function openPanel(){
   if(busy)return;
   pn.classList.add('on');
@@ -2974,6 +3039,7 @@ function openPanel(){
   reloadLocal();
   setMode(pnMode);
   startPoll();
+  if(CLOUD)cloudRefreshRaffle().catch(function(){});
 }
 function closePanel(){
   pn.classList.remove('on');

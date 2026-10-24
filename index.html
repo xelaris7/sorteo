@@ -398,6 +398,47 @@ button.danger-btn{background:linear-gradient(180deg,#ff7a90,#e0354f);color:#fff;
 body #open,body #go,body #reset{display:none!important}
 #admRun{display:none}
 body.adm-main #admRun{display:block!important}
+/* ===== Paleta H · acero cepillado y bronce (elegida) ===== */
+:root{
+  --bg:#101216;--text:#e9e6df;--text2:#aab2bd;
+  --surface1:#20252c;--surface2:#181c22;
+  --border:#2c333d;--border-strong:#6b7480;
+  --bg-accent:#2c2416;--text-accent:#f0cf7e;--border-accent:#c9973d;--fill-accent:#c9973d;--on-accent:#16110a;
+  --bg-danger:#3a1d22;--text-danger:#ffb3c1;--border-danger:#a94455;--fill-danger:#e0476b;--on-danger:#ffffff;
+  --bg-success:#1d2a22;--text-success:#9fe3bd;--border-success:#2f8f63;--fill-success:#2fd18a;--on-success:#06261d;
+  --c-win:#c9973d;--c-win-fg:#16110a;--c-out:#6b7480;--c-out-fg:#f5f5f5;--c-cell:#20252c;--c-cell-fg:#e9e6df;
+}
+html{background:#101216!important;min-height:100%}
+body{background:transparent;color:var(--text)}
+#ttl,.pcard h1{background:linear-gradient(90deg,#f7e2a6,#c9973d 55%,#8a6a2a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pcard,.podium,.big,.stage .big,.form,.rs-box,.lg-in{background:var(--surface1)!important;border:1px solid var(--border)!important;box-shadow:0 10px 30px rgba(0,0,0,.35)!important}
+.podium{background:var(--surface1)!important}
+.stage .big .n{background:linear-gradient(180deg,#f7e2a6,#c9973d);-webkit-background-clip:text;background-clip:text;color:transparent!important;filter:drop-shadow(0 0 12px rgba(201,151,61,.35))}
+.stage .big .l{color:#f0cf7e}
+button{color:var(--text);background:linear-gradient(180deg,#2c333d,#222831);border:1px solid var(--border-strong);box-shadow:0 4px 0 #0a0c10}
+button.primary{background:linear-gradient(180deg,#d9ad55,#c9973d 55%,#a87a2c);color:#16110a;border:1px solid #f0cf7e;box-shadow:0 5px 0 #6e4f1a,0 0 20px rgba(201,151,61,.25)}
+button.primary:active{box-shadow:0 1px 0 #6e4f1a}
+button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;border:1px solid #e0768a;box-shadow:0 4px 0 #5e1a2a}
+@keyframes latido{0%,100%{box-shadow:0 5px 0 #6e4f1a,0 0 14px rgba(201,151,61,.25)}50%{box-shadow:0 5px 0 #6e4f1a,0 0 28px rgba(240,207,126,.5)}}
+.linkbtn{color:#f0cf7e}
+.inp,select{background:#181c22;color:var(--text);border:1px solid var(--border-strong)}
+.inp::placeholder{color:#6b7480}
+.hint,.evi,#evInfo,.pn-head span{color:var(--text2)}
+.msg.ok{color:#9fe3bd}.msg.er{color:#ffb3c1}
+.tabs button{background:#222831}
+.tabs button.on,.tabs button[aria-selected="true"]{background:linear-gradient(180deg,#d9ad55,#c9973d);color:#16110a;border-color:#f0cf7e}
+.rs-alert{background:var(--bg-danger);color:#ffd0da;border:1px solid var(--border-danger)}
+.gridmain .cell{background:linear-gradient(180deg,#2c333d,#20252c);color:#e9e6df;border:1px solid #3a4250;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 3px 0 #0a0c10}
+.cell.win,.gridmain .cell.win{background:linear-gradient(180deg,#f7e2a6,#c9973d)!important;color:#16110a!important;border:2px solid #f7e2a6!important;box-shadow:0 0 18px rgba(201,151,61,.45)!important}
+.cell.out,.gridmain .cell.out{background:linear-gradient(180deg,#6b7480,#4a5260)!important;color:#f5f5f5!important;border:2px solid #8a929c!important;box-shadow:none!important}
+.cell.seen,.gridmain .cell.seen{background:linear-gradient(180deg,#d7dde4,#aab2bd)!important;color:#101216!important;border:2px solid #eef1f4!important;box-shadow:0 0 14px rgba(170,178,189,.45)!important}
+.cell.live,.gridmain .cell.live{background:linear-gradient(180deg,#f7e2a6,#c9973d)!important;color:#16110a!important;border:2px solid #ffffff!important;box-shadow:0 0 0 3px #c9973d,0 0 26px rgba(240,207,126,.9)!important}
+#g1 .cell:not(.tk),#g2 .cell:not(.tk),#pg2 .cell:not(.tk){background:linear-gradient(180deg,#3a4250,#2c333d)!important;color:#e9e6df!important;border:1px solid #4a5260!important}
+#g1 .cell.tk,#g2 .cell.tk,#pg2 .cell.tk{background:linear-gradient(180deg,#f7e2a6,#c9973d)!important;color:#16110a!important;border:1px solid #f7e2a6!important}
+.pg .cell.tkp{background:linear-gradient(180deg,#4a5260,#343b46);color:#c7cdd6;border:1px solid #5a6270}
+.pg .cell:not(.tkp){background:linear-gradient(180deg,#3a4250,#2c333d);color:#e9e6df;border:1px solid #4a5260;font-weight:700}
+.pg .cell.sel,.cell.sel{border:2px solid #f0cf7e!important}
+.cell.mine{outline:3px solid #f0cf7e!important}
 </style>
 </head>
 <body>
@@ -576,28 +617,10 @@ body.adm-main #admRun{display:block!important}
   </div>
 
   <div id="vCfg" style="display:none">
-    <div id="crPanel" style="display:none;margin-bottom:12px">
-      <p class="sec" style="margin-top:0">Panel del creador</p>
-      <p class="hint" style="margin-top:0">Elige tu plan. Si quieres ser VIP, el botón te lleva a Play Store para comprar la versión pro.</p>
-      <div class="row">
-        <button id="crFree">Administrador gratuito</button>
-        <button id="crVip">Administrador VIP</button>
-      </div>
-      <p class="hint" id="crNote"></p>
-      <div id="crAdmin" style="display:none">
-        <p class="sec">Asignar plan a un organizador</p>
-        <input class="inp" id="spUser" placeholder="ID de la cuenta del organizador" maxlength="40">
-        <div class="row" style="margin-top:8px">
-          <select id="spPlan" style="flex:1"><option value="free">Gratuito (1 rifa)</option><option value="vip">VIP (rifas ilimitadas)</option></select>
-          <button id="spGo">Aplicar plan</button>
-        </div>
-        <p class="msg" id="mSp"></p>
-      </div>
-    </div>
     <p class="sec" style="margin-top:0">Números del sorteo</p>
-    <p class="hint" style="margin-top:0">Números que participan, del 1 al N (mínimo 10, máximo 1000).</p>
+    <p class="hint" style="margin-top:0">Números que participan, del 1 al N (mínimo 10, máximo 100).</p>
     <div class="row">
-      <input class="inp" id="totN" type="number" min="10" max="1000" step="1" inputmode="numeric" style="flex:1;margin:0">
+      <input class="inp" id="totN" type="number" min="10" max="100" step="1" inputmode="numeric" style="flex:1;margin:0">
       <button id="totSave">Guardar cantidad</button>
     </div>
     <p class="msg" id="mTot"></p>
@@ -1320,7 +1343,7 @@ function normalizeDB(){
   DB.cfg.countdown=[3,5,10].indexOf(parseInt(DB.cfg.countdown,10))>=0?parseInt(DB.cfg.countdown,10):5;
   DB.cfg.firstMult=[1,1.5,2].indexOf(parseFloat(DB.cfg.firstMult))>=0?parseFloat(DB.cfg.firstMult):1;
   DB.cfg.pin=DB.cfg.pin||'';
-  DB.cfg.total=clampN(DB.cfg.total,10,1000,100);
+  DB.cfg.total=clampN(DB.cfg.total,10,100,100);
   DB.cfg.date=DB.cfg.date||'2026-10-18';
   DB.cfg.time=DB.cfg.time||'20:00';
   DB.cfg.platform=DB.cfg.platform||'TikTok LIVE';
@@ -1420,52 +1443,9 @@ function rfBtn(label,act,id,cls){
   if(cls)b.className=cls;
   return b;
 }
-/* Creador: puede ver la app como administrador gratuito o VIP (vista previa); el resto usa su plan real */
-var CREATOR=false,PREVIEW_PLAN=null;
-function planNow(){
-  if(!CLOUD)return IDX.plan;
-  if(CREATOR&&PREVIEW_PLAN)return PREVIEW_PLAN;
-  return CLOUD_PLAN;
-}
-function renderCreator(){
-  var show=!!CLOUD;
-  $('crPanel').style.display=show?'':'none';
-  if(!show)return;
-  $('crAdmin').style.display=CREATOR?'':'none';
-  $('crFree').classList.toggle('primary',planNow()==='free');
-  $('crVip').classList.toggle('primary',planNow()==='vip');
-  if(CREATOR){
-    $('crNote').textContent=PREVIEW_PLAN
-      ?'Vista previa activa: '+(PREVIEW_PLAN==='vip'?'administrador VIP':'administrador gratuito')+'. Tu plan real es '+(CLOUD_PLAN==='vip'?'VIP':'gratuito')+'.'
-      :'Estás en tu vista real (plan '+(CLOUD_PLAN==='vip'?'VIP':'gratuito')+').';
-  }else{
-    $('crNote').textContent=CLOUD_PLAN==='vip'
-      ?'Tu plan actual es VIP: rifas ilimitadas y hasta 1000 números.'
-      :'Tu plan actual es gratuito: hasta 100 números y una rifa a la vez.';
-  }
-}
-function setPreview(p){
-  PREVIEW_PLAN=p;renderCreator();renderRifas();
-}
-/* Enlace de la versión pro en Play Store (cambiar por el enlace exacto de la app publicada) */
-var PLAY_VIP_URL='https://play.google.com/store/search?q=RifaXs&c=apps';
-$('crFree').addEventListener('click',function(){
-  if(CREATOR)setPreview(PREVIEW_PLAN==='free'?null:'free');
-});
-$('crVip').addEventListener('click',function(){
-  if(CREATOR){setPreview(PREVIEW_PLAN==='vip'?null:'vip');return;}
-  if(CLOUD_PLAN!=='vip')window.open(PLAY_VIP_URL,'_blank');
-});
-$('spGo').addEventListener('click',async function(){
-  if(!CLOUD||!CREATOR)return;
-  var uid=$('spUser').value.trim(),plan=$('spPlan').value;
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid)){showMsg('mSp','Escribe un ID válido (formato 00000000-0000-0000-0000-000000000000).','er');return;}
-  showMsg('mSp','Guardando…');
-  try{
-    await adminReq('POST','/rest/v1/rpc/set_plan',{p_user:uid,p_plan:plan});
-    showMsg('mSp','Plan '+(plan==='vip'?'VIP':'gratuito')+' asignado a esa cuenta.','ok');
-  }catch(e){showMsg('mSp','No se pudo asignar el plan: '+e.message,'er');}
-});
+/* La app es siempre de administrador gratuito: 1 rifa a la vez y hasta 100 números */
+function planNow(){return 'free';}
+function renderCreator(){}
 
 function renderRifas(){
   var vip=planNow()==='vip';
@@ -1648,7 +1628,6 @@ async function refreshRaffles(){
   /* El rol lo decide el servidor (me_role): solo la cuenta del creador recibe is_creator */
   var me=await adminReq('POST','/rest/v1/rpc/me_role',{});
   CLOUD_PLAN=(me&&me.plan==='vip')?'vip':'free';
-  CREATOR=!!(me&&me.is_creator);
   renderCreator();
 }
 function codeNow(){
@@ -1669,7 +1648,7 @@ async function cloudLoadRaffle(id){
   DB.cfg.bigLast=r.big_last!==false;
   DB.draws=Array.isArray(r.draws)?r.draws:[];
   applyEvent(r.event);
-  DB.cfg.total=clampN(r.total,10,1000,100);
+  DB.cfg.total=clampN(r.total,10,100,100);
   DB.cfg.photo=r.photo||'';
   PHOTO_SENT=photoHash(DB.cfg.photo);
   normalizeDB();
@@ -1785,7 +1764,7 @@ async function enterBuyerCloud(code){
   document.body.classList.remove('demo');
   DB=defaults();
   DB.cfg.name=info.raffle_name||'';
-  DB.cfg.total=clampN(info.total,10,1000,100);
+  DB.cfg.total=clampN(info.total,10,100,100);
   DB.cfg.winners=clampN(info.winners,1,10,1);
   DB.cfg.elims=clampN(info.elims,0,30,2);
   DB.cfg.bigLast=info.big_last!==false;
@@ -3201,9 +3180,9 @@ $('rNameSave').addEventListener('click',function(){
 });
 $('totSave').addEventListener('click',function(){
   if(busy||drawn.length>0){showMsg('mTot','Hay un sorteo en curso. Reinicia para cambiar la cantidad.','er');return;}
-  var maxN=planNow()==='vip'?1000:100;
+  var maxN=100;
   var raw=parseInt($('totN').value,10);
-  if(raw>maxN){showMsg('mTot','Tu plan permite hasta '+maxN+' números'+(maxN===100?'. Con VIP puedes llegar a 1000.':'.'),'er');return;}
+  if(raw>maxN){showMsg('mTot','El límite es de '+maxN+' números.','er');return;}
   var v=clampN($('totN').value,10,maxN,DB.cfg.total);
   if(v===DB.cfg.total){showMsg('mTot','Ya hay '+v+' números.','ok');return;}
   var cur=DB.cfg.total;
@@ -3592,7 +3571,7 @@ $('lgGo').addEventListener('click',async function(){
 });
 $('lgPass').addEventListener('keydown',function(e){if(e.key==='Enter')$('lgGo').click();});
 $('logout').addEventListener('click',function(){
-  sess=null;storeSess();RID=null;DB=defaults();CLOUD_LIST=[];CLOUD_PLAN='free';CREATOR=false;PREVIEW_PLAN=null;renderCreator();BUY_CODE=null;adminOK=false;document.body.classList.remove('adm-main');liveStopPoll();
+  sess=null;storeSess();RID=null;DB=defaults();CLOUD_LIST=[];CLOUD_PLAN='free';renderCreator();BUY_CODE=null;adminOK=false;document.body.classList.remove('adm-main');liveStopPoll();
   document.body.classList.remove('buyer');
   pn.classList.remove('on');stopPoll();
   init(true);

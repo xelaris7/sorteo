@@ -1491,6 +1491,8 @@ function applyGameLock(){
 var GAME_HOST=null,GAME_HB=null,RUNNING_HERE=false,HB_TIMER=null,HB_STALE_MS=120000,SUSP_SEEN=false;
 function hostName(){return EDITION==='vip'?'APK VIP':(EDITION==='free'?'APK gratuita':'web');}
 function gameSuspended(){return !!(GAME_AT&&!RUNNING_HERE&&GAME_HB&&(Date.now()-GAME_HB)>HB_STALE_MS);}
+/* ¿Puede este dispositivo reiniciar? Sí si no hay juego, si lo genera este dispositivo o si quedó suspendido */
+function restartAllowed(){return !gameRunning()||RUNNING_HERE||GAME_HOST===hostName()||gameSuspended();}
 function sendHeartbeat(){
   if(!CLOUD||!RID||!RUNNING_HERE)return;
   adminReq('PATCH','/rest/v1/raffles?id=eq.'+RID,{game_heartbeat:new Date().toISOString(),game_host:hostName()},{Prefer:'return=minimal'}).catch(function(){});
@@ -1533,14 +1535,16 @@ function applyGameBanner(){
   var show=on||incomplete;
   var host=GAME_HOST||'otro dispositivo';
   var text=incomplete?'Este sorteo quedó incompleto: hay resultados guardados y ya no hay un juego en curso. Para volver a empezar, reinícialo.':!on?'':(susp?'El juego se suspendió temporalmente: '+host+' dejó de responder. La única forma de volver es reiniciar el juego.':
-    (RUNNING_HERE?'Juego en curso en esta '+(hostName()==='web'?'web':hostName())+'. La configuración queda bloqueada hasta que termine.':
-    'Juego en curso desde '+host+'. Para verlo o controlarlo, abre la '+host+'. La configuración queda bloqueada hasta que termine.'));
+    (RUNNING_HERE?'Juego en curso en esta '+hostName()+'. Desde aquí puedes reiniciarlo. La configuración queda bloqueada hasta que termine.':
+    (GAME_HOST===hostName()?'Juego en curso iniciado desde esta '+hostName()+', pero ya no está activo aquí. Reinícialo para volver a jugar.':
+    'Juego en curso desde '+host+'. Solo puedes observarlo desde aquí, sin hacer cambios ni reiniciar. Cuando termine, podrás editar.')));
   ['','R'].forEach(function(k){
     var b=$('gameBan'+k),row=$('gbRow'+k);
     if(b){b.style.display=show?'':'none';b.textContent=text;}
     if(row)row.style.display=show?'':'none';
     var v=$('gbView'+k);if(v)v.style.display=(on&&RUNNING_HERE)?'':'none';
-    var r=$('gbRestart'+k);if(r)r.style.display=show?'':'none';
+    /* Reiniciar solo en el dispositivo que genera el juego, o cuando está suspendido o incompleto */
+    var r=$('gbRestart'+k);if(r)r.style.display=(show&&restartAllowed())?'':'none';
   });
   if(susp&&!SUSP_SEEN){SUSP_SEEN=true;showInfo('AVISO','El juego se suspendió temporalmente',''+host+' dejó de responder. Para volver, reinicia el juego.');}
 }
@@ -2618,7 +2622,7 @@ function applyResult(i,pick){
 }
 
 function updateLocks(){
-  var lock=started()||gameRunning();
+  var lock=busy||countingDown||gameRunning();
   var fx=fxNow();
   applyGameLock();
   $('dMin').disabled=lock||fx;$('dPlus').disabled=lock||fx;
@@ -2626,10 +2630,11 @@ function updateLocks(){
   $('countdown').disabled=lock||fx;
   ['wMin','wPlus','eMin','ePlus','bigLast'].forEach(function(id){$(id).disabled=lock||fx;});
   $('open').disabled=busy||countingDown;
-  $('openSim').disabled=lock;
+  /* ENTRAR es la puerta del administrador (INICIAR y Reiniciar están en el panel): solo se bloquea para compradores */
+  $('openSim').disabled=lock&&!adminOK;
   var noMore=drawn.length>=seq.length||pool().length<seq.length;
   go.disabled=noMore||(gameRunning()&&!RUNNING_HERE);
-  $('reset').disabled=false;
+  $('reset').disabled=!restartAllowed();
   stGo.disabled=busy||countingDown||noMore;
   stGo.style.display=go.style.display;
   $('stBack').disabled=false;
@@ -3102,7 +3107,8 @@ $('rsYes').addEventListener('click',doRestart);
 /* ---------- Panel de participantes ---------- */
 var pn=$('pn'),pnMode='cfg',selN=null,adminOK=false,delTimer=null;
 function showMsg(id,t,cls){var e=$(id);e.textContent=t||'';e.className='msg'+(cls?' '+cls:'');}
-function locked(){return drawn.length>0||gameRunning();}
+/* Edición bloqueada solo mientras hay un sorteo en curso (en vivo o juego activo) */
+function locked(){return busy||countingDown||gameRunning();}
 function updateStats(){
   var t=pool().length;
   var s='Números asignados: '+t+' · Números disponibles: '+(DB.cfg.total-t);

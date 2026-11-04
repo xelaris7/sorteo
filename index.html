@@ -241,7 +241,8 @@ body.ptmode #buyClose{display:none}
 .rf-cd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;letter-spacing:1px;margin-top:4px}
 body.buyer #go,body.buyer #reset,body.buyer #open,body.buyer:not(.watch) .stage,body.buyer .pn:not(#buyPn):not(#minePn){display:none!important}
 body.watch #stGo,body.watch #stBack{display:none!important}
-body.watch #grid{pointer-events:none}
+/* Lista de participantes: solo lectura, sin selección ni copia */
+#partPn,#partPn *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
 body.mirror.watch #stBack{display:inline-block!important}
 body.watch #ovBtn{display:none!important}
 body.buyer #codeBtn{display:none}
@@ -677,9 +678,10 @@ button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;
     <p class="msg" id="mCol"></p>
 
     <p class="sec">Foto de los premios</p>
-    <p class="hint" style="margin-top:0">Se muestra en la tarjeta principal. Mientras no subas una, aparece una ilustración de ejemplo (celular).</p>
-    <input type="file" id="photoIn" accept="image/*" style="margin-bottom:8px;max-width:100%">
-    <div class="row"><button id="photoDel">Quitar foto</button></div>
+    <p class="hint" style="margin-top:0" id="photoHint">Se muestra en la tarjeta principal. Puedes subir hasta 5 fotos (en la versión gratuita, 1); se alternan automáticamente. Mientras no subas una, aparece una ilustración de ejemplo (celular).</p>
+    <input type="file" id="photoIn" accept="image/*" multiple style="margin-bottom:8px;max-width:100%">
+    <div id="photoThumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+    <div class="row"><button id="photoDel">Quitar todas las fotos</button></div>
     <p class="msg" id="mPhoto"></p>
 
     <p class="sec">Tarjeta de la rifa</p>
@@ -1757,8 +1759,8 @@ function applyRaffleRow(r){
   DB.draws=Array.isArray(r.draws)?r.draws:[];
   applyEvent(r.event);
   DB.cfg.total=clampN(r.total,10,totCap(),100);
-  DB.cfg.photo=r.photo||'';
-  PHOTO_SENT=photoHash(DB.cfg.photo);
+  setPhotos(parsePhotoStr(r.photo));
+  PHOTO_SENT=photoHash(r.photo||'');
   normalizeDB();
 }
 /* Trae de Supabase lo último guardado desde cualquier dispositivo (web o APK). No pisa cambios pendientes de guardar ni un sorteo en curso. */
@@ -1878,7 +1880,7 @@ async function applyCard(info){
   if(ev.photoV!==undefined&&ev.photoV!==CARD_PHOTO_V){
     try{
       var ph=await sbReq('POST','/rest/v1/rpc/raffle_photo_by_code',{p_code:BUY_CODE},null,true);
-      DB.cfg.photo=typeof ph==='string'?ph:'';CARD_PHOTO_V=ev.photoV;changed=true;
+      setPhotos(parsePhotoStr(typeof ph==='string'?ph:''));CARD_PHOTO_V=ev.photoV;changed=true;
     }catch(e){}
   }
   if(changed){applyTitle();renderPhoto();}
@@ -1920,6 +1922,7 @@ async function enterBuyerCloud(code){
   document.body.classList.add('buyer');
   $('stage').classList.remove('on');
   init();
+  loadMine();
   liveStartPoll();
   return null;
 }
@@ -1949,10 +1952,11 @@ async function cloudPushRaffle(){
   pushTimer=null;
   if(!RID)return;
   try{
-    var ph=photoHash(DB.cfg.photo);
+    var ser=photosSerial();
+    var ph=photoHash(ser);
     var body={name:DB.cfg.name||'Mi rifa',winners:DB.cfg.winners,elims:DB.cfg.elims,big_last:DB.cfg.bigLast,total:DB.cfg.total,draws:DB.draws,
       event:{date:DB.cfg.date,time:DB.cfg.time,platform:DB.cfg.platform,account:DB.cfg.account,dur:DB.cfg.dur,firstMult:DB.cfg.firstMult,countdown:DB.cfg.countdown,photoV:ph}};
-    if(ph!==PHOTO_SENT)body.photo=DB.cfg.photo||null;
+    if(ph!==PHOTO_SENT)body.photo=ser||null;
     await adminReq('PATCH','/rest/v1/raffles?id=eq.'+RID,body,{Prefer:'return=minimal'});
     PHOTO_SENT=ph;
     var en=CLOUD_LIST.find(function(x){return x.id===RID;});
@@ -2136,6 +2140,10 @@ async function livePoll(){
   try{info=await sbReq('POST','/rest/v1/rpc/raffle_by_code',{p_code:code},null,true);}catch(e){return;}
   if(!info||!info.valid||(!mirror&&!document.body.classList.contains('buyer')))return;
   var recv=Date.now();
+  if(PART_GAME_ON!==!!info.game_on){
+    PART_GAME_ON=!!info.game_on;renderPartBtn();
+    if(!PART_GAME_ON&&DB&&DB.people){Object.keys(DB.people).forEach(function(k){if(DB.people[k])DB.people[k].name='';});}
+  }
   applyNames(info.names);
   applyCard(info);
   /* Tras un reinicio, los resultados del servidor pueden tardar un poco en quedar vacíos:
@@ -2190,8 +2198,11 @@ function applyNames(list){
   });
 }
 /* Números propios del comprador con enlace de venta (los confirma el servidor) */
-function myNumbers(){return BUY_TOKEN?MINE_SRV.slice():[];}
-function saveMine(nums){MINE_SRV=(nums||[]).map(Number).sort(function(a,b){return a-b;});renderMineBtn();markMine();}
+function myNumbers(){return MINE_SRV.slice();}
+/* Los números propios se recuerdan en el teléfono para reconocerlos durante el juego */
+function mineKey(){return 'sorteo_mine_'+(BUY_CODE||BUY_TOKEN||TOKEN||'x');}
+function loadMine(){try{var a=JSON.parse(localStorage.getItem(mineKey())||'null');if(Array.isArray(a)&&a.length)MINE_SRV=a.map(Number);}catch(e){}}
+function saveMine(nums){MINE_SRV=(nums||[]).map(Number).sort(function(a,b){return a-b;});try{localStorage.setItem(mineKey(),JSON.stringify(MINE_SRV));}catch(e){}renderMineBtn();markMine();}
 function isMine(n){return myNumbers().indexOf(n)>=0;}
 function renderMineBtn(){
   renderPartBtn();
@@ -2221,9 +2232,11 @@ function openMine(){
 $('mineBtn').addEventListener('click',function(){openMine();$('minePn').classList.add('on');});
 $('mineClose').addEventListener('click',function(){$('minePn').classList.remove('on');});
 /* PARTICIPANTES (solo participantes): lista de solo lectura con números libres y ocupados; nombre y primer apellido */
+/* Los nombres de los demás solo se ven mientras se juega (lo confirma el servidor en cada consulta) */
+var PART_GAME_ON=false;
 function renderPartBtn(){
   var r=$('partRow');if(!r)return;
-  var show=document.body.classList.contains('buyer')||document.body.classList.contains('demo');
+  var show=document.body.classList.contains('demo');
   r.style.display=show?'':'none';
   if(!show)$('partPn').classList.remove('on');
 }
@@ -2277,6 +2290,9 @@ function buildPartGrid(){
 }
 $('partBtn').addEventListener('click',function(){openPart();$('partPn').classList.add('on');});
 $('partClose').addEventListener('click',function(){$('partPn').classList.remove('on');});
+['copy','cut','paste','contextmenu','dragstart','selectstart'].forEach(function(ev){
+  $('partPn').addEventListener(ev,function(e){e.preventDefault();});
+});
 function alertMine(n,s){
   var win=!!(s&&s.t==='win');
   var title=win?'¡Tu número salió: GANADOR!':'Tu número salió: eliminado';
@@ -2978,34 +2994,96 @@ window.addEventListener('resize',fitGrid);
 
 /* ---------- Foto de los premios ---------- */
 var PHONE_SVG='<svg viewBox="0 0 240 160" role="img" aria-label="Premio de ejemplo: celular"><rect width="240" height="160" fill="#e6f1fb"/><defs><linearGradient id="phg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#378add"/><stop offset="1" stop-color="#0c447c"/></linearGradient></defs><rect x="84" y="10" width="72" height="128" rx="14" fill="#1a1a1a"/><rect x="90" y="20" width="60" height="108" rx="8" fill="url(#phg)"/><circle cx="120" cy="14" r="2.5" fill="#555"/><rect x="98" y="30" width="44" height="30" rx="6" fill="#ffffff" opacity=".85"/><circle cx="110" cy="45" r="5" fill="#0c447c"/><circle cx="130" cy="45" r="5" fill="#97c459"/><text x="120" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff" font-family="system-ui,sans-serif">CELULAR</text><text x="120" y="152" text-anchor="middle" font-size="9" fill="#0c447c" font-family="system-ui,sans-serif">Foto de ejemplo</text></svg>';
+/* Varias fotos: se guardan en el mismo campo "photo". Una sola foto = data URL (como antes); varias = JSON con la lista. */
+var PHOTO_MAX_N=5, PHOTO_MAX_CHARS=350000, PHOTO_TOTAL_CHARS=1800000;
+var PHOTO_ROT=null, PHOTO_IDX=0;
+function photoMax(){return fxNow()?1:PHOTO_MAX_N;}
+function photoList(){return (DB.cfg.photos&&DB.cfg.photos.length)?DB.cfg.photos.slice():(DB.cfg.photo?[DB.cfg.photo]:[]);}
+function setPhotos(a){a=(a||[]).filter(Boolean).slice(0,PHOTO_MAX_N);DB.cfg.photos=a;DB.cfg.photo=a[0]||'';}
+function parsePhotoStr(s){
+  if(!s)return [];
+  if(s.charAt(0)==='['){
+    try{var a=JSON.parse(s);return Array.isArray(a)?a.filter(function(x){return typeof x==='string'&&x.indexOf('data:')===0;}).slice(0,PHOTO_MAX_N):[];}
+    catch(e){return [];}
+  }
+  return [s];
+}
+function photosSerial(){var a=photoList();return a.length>1?JSON.stringify(a):(a[0]||'');}
+function photosTotalChars(a){return a.reduce(function(t,x){return t+x.length;},0);}
 function renderPhoto(){
   var box=$('prizeImg');
   box.innerHTML='';
-  if(DB.cfg.photo){
-    var im=document.createElement('img');im.src=DB.cfg.photo;im.alt='Premios del sorteo';box.appendChild(im);
-  }else box.innerHTML=PHONE_SVG;
+  if(PHOTO_ROT){clearInterval(PHOTO_ROT);PHOTO_ROT=null;}
+  var a=photoList();
+  if(fxNow())a=a.slice(0,1);/* gratuita: muestra solo una foto (sin borrar las demás de la nube) */
+  if(!a.length){box.innerHTML=PHONE_SVG;renderPhotoThumbs();return;}
+  if(PHOTO_IDX>=a.length)PHOTO_IDX=0;
+  var im=document.createElement('img');im.src=a[PHOTO_IDX];im.alt='Premios del sorteo';box.appendChild(im);
+  if(a.length>1){
+    box.style.position='relative';
+    var dots=document.createElement('div');
+    dots.style.cssText='position:absolute;left:0;right:0;bottom:6px;display:flex;justify-content:center;gap:6px';
+    a.forEach(function(_,i){
+      var d=document.createElement('span');
+      d.style.cssText='width:7px;height:7px;border-radius:50%;background:'+(i===PHOTO_IDX?'#fff':'rgba(255,255,255,.45)');
+      dots.appendChild(d);
+    });
+    box.appendChild(dots);
+    PHOTO_ROT=setInterval(function(){PHOTO_IDX=(PHOTO_IDX+1)%a.length;renderPhoto();},4000);
+  }
+  renderPhotoThumbs();
+}
+function renderPhotoThumbs(){
+  var box=$('photoThumbs');if(!box)return;
+  box.innerHTML='';
+  var hint=$('photoHint');
+  if(hint)hint.textContent='Se muestra en la tarjeta principal. Puedes subir hasta '+photoMax()+' '+(photoMax()===1?'foto':'fotos')+' (en la versión gratuita, 1); se alternan automáticamente. Mientras no subas una, aparece una ilustración de ejemplo (celular).';
+  photoList().forEach(function(src,i){
+    var w=document.createElement('div');
+    w.style.cssText='position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden';
+    var im=new Image();im.src=src;im.alt='Foto '+(i+1);im.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
+    var x=document.createElement('button');
+    x.type='button';x.textContent='×';x.title='Quitar esta foto';x.setAttribute('aria-label','Quitar foto '+(i+1));
+    x.style.cssText='position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;line-height:18px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:14px';
+    x.addEventListener('click',function(){
+      var a=photoList();a.splice(i,1);
+      setPhotos(a);PHOTO_IDX=0;save();renderPhoto();
+      showMsg('mPhoto','Foto quitada.','ok');
+    });
+    w.appendChild(im);w.appendChild(x);box.appendChild(w);
+  });
 }
 $('photoIn').addEventListener('change',function(){
-  var f=this.files&&this.files[0];
-  if(!f)return;
-  if(!/^image\//.test(f.type)){showMsg('mPhoto','Selecciona un archivo de imagen.','er');return;}
-  var url=URL.createObjectURL(f),img=new Image();
-  img.onload=function(){
-    var sc=Math.min(1,800/Math.max(img.width,img.height));
-    var c=document.createElement('canvas');
-    c.width=Math.max(1,Math.round(img.width*sc));c.height=Math.max(1,Math.round(img.height*sc));
-    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    var data=c.toDataURL('image/jpeg',0.8);
-    URL.revokeObjectURL(url);
-    if(data.length>1500000){showMsg('mPhoto','La imagen es muy pesada. Usa una foto más pequeña.','er');return;}
-    DB.cfg.photo=data;save();renderPhoto();showMsg('mPhoto','Foto guardada.','ok');
-  };
-  img.onerror=function(){URL.revokeObjectURL(url);showMsg('mPhoto','No se pudo leer la imagen.','er');};
-  img.src=url;
-  this.value='';
+  var el=this,files=Array.prototype.slice.call(el.files||[]);
+  el.value='';
+  if(!files.length)return;
+  var cur=photoList(),room=photoMax()-cur.length;
+  if(room<=0){
+    showMsg('mPhoto',fxNow()?'La versión gratuita permite una sola foto. Quita la actual para cambiarla.':'Ya tienes '+PHOTO_MAX_N+' fotos. Quita una para subir otra.','er');
+    return;
+  }
+  var pick=files.slice(0,room),out=cur.slice(),errs=[],added=0,i=0;
+  if(files.length>room)errs.push('Límite de '+photoMax()+' '+(photoMax()===1?'foto':'fotos')+': se omitieron '+(files.length-room)+'.');
+  function next(){
+    if(i>=pick.length){
+      setPhotos(out);PHOTO_IDX=0;save();renderPhoto();
+      var ok=added?(added+(added===1?' foto guardada.':' fotos guardadas.')):'';
+      if(errs.length)showMsg('mPhoto',(ok?ok+' ':'')+errs.join(' '),'er');
+      else showMsg('mPhoto',ok||'Sin cambios.','ok');
+      return;
+    }
+    var f=pick[i++];
+    readPhoto(f,function(d,err){
+      if(err)errs.push(err);
+      else if(photosTotalChars(out)+d.length>PHOTO_TOTAL_CHARS)errs.push('Las fotos ocupan demasiado espacio. Usa imágenes más pequeñas.');
+      else{out.push(d);added++;}
+      next();
+    },900,PHOTO_MAX_CHARS);
+  }
+  next();
 });
 $('photoDel').addEventListener('click',function(){
-  DB.cfg.photo='';save();renderPhoto();showMsg('mPhoto','Foto quitada.','ok');
+  setPhotos([]);PHOTO_IDX=0;save();renderPhoto();showMsg('mPhoto','Fotos quitadas.','ok');
 });
 
 $('ovBtn').addEventListener('click',closeReveal);
@@ -3923,7 +4001,7 @@ $('pfok').addEventListener('click',async function(){
   if(r&&(r.ok===true)){
     var nums=(Array.isArray(r.numbers)?r.numbers:[r.number]).slice().sort(function(a,b){return a-b;});
     var t={raffle:r.raffle_name,number:nums.join(', '),name:name,phone:phone,email:email,code:byCode?BUY_TOKEN:(r.code||('B'+r.number)),date:r.issued_at||new Date().toISOString(),luck:pickLuck(),event:r.event||(pInfo&&pInfo.event)||null,rcode:BUY_CODE||'',sale:byCode?BUY_TOKEN:null};
-    if(!byCode){try{localStorage.setItem('sorteo_ticket_'+TOKEN,JSON.stringify(t));}catch(e){}}
+    if(!byCode){saveMine(nums);try{localStorage.setItem('sorteo_ticket_'+TOKEN,JSON.stringify(t));}catch(e){}}
     else{SALE_USED=true;saveMine(nums);askNotifPerm();try{localStorage.setItem('sorteo_sale_ticket_'+BUY_TOKEN,JSON.stringify(t));}catch(e){}}
     showTicket(t);
   }else{

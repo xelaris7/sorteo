@@ -247,6 +247,7 @@ body.mirror.watch #stBack{display:inline-block!important}
 body.watch #ovBtn{display:none!important}
 body.buyer #codeBtn{display:none}
 body:not(.buyer) #exitBuyer{display:none}
+body:not(.buyer) #exitApp{display:none}
 @media (min-width:900px){
   :root{
     --bg:#fbf5ea;--text:#2b2118;--text2:#7d6b58;
@@ -465,7 +466,7 @@ button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;
   <div class="buyrow" id="partRow" style="display:none"><button class="buybtn" id="partBtn">PARTICIPANTES</button></div>
   <p class="hint" id="left" style="text-align:center"></p>
   <div class="row bottom"><button class="grow" id="open">ADMINISTRADOR</button></div>
-  <div class="linkrow"><button class="linkbtn" id="codeBtn">Tengo un código de acceso</button><button class="linkbtn" id="mineBtn" style="display:none">Mis números</button><button class="linkbtn" id="exitBuyer">Salir del modo participante</button></div>
+  <div class="linkrow"><button class="linkbtn" id="codeBtn">Tengo un código de acceso</button><button class="linkbtn" id="mineBtn" style="display:none">Mis números</button><button class="linkbtn" id="exitBuyer">Volver al inicio</button><button class="linkbtn" id="exitApp">Salir de la app</button></div>
 </div>
 
 <div class="stage" id="stage" role="dialog" aria-label="Sorteo en curso">
@@ -1455,14 +1456,32 @@ function enterBuyer(code){
   return null;
 }
 function exitBuyer(){
-  IDX.buyer=null;saveIdx();
-  bootRaffle();loadDB();
+  /* En la nube no hay IDX local: solo se limpia en modo local */
+  if(!CLOUD){IDX.buyer=null;saveIdx();bootRaffle();loadDB();}
   document.body.classList.remove('buyer');
   adminOK=false;
   BUY_TOKEN=null;SALE_USED=false;SALE_QUOTA=0;MINE_SRV=[];
   renderMineBtn();
   init();
+  /* Solo regresa a la pantalla inicial. Los números elegidos quedan guardados en el dispositivo (no se borran). */
+  showModePick();
 }
+/* Salir de la app: solo cierra la aplicación; no cambia los números elegidos */
+function exitApp(){
+  var C=window.Capacitor,A=C&&C.Plugins&&C.Plugins.App;
+  if(A&&A.exitApp){A.exitApp();return;}
+  showInfo('AVISO','Puedes cerrar esta pestaña','Tus números quedan guardados en este dispositivo.');
+}
+$('exitApp').addEventListener('click',exitApp);
+/* Botón atrás del celular: en modo participante vuelve a la pantalla inicial, no cierra la app */
+(function(){
+  var C=window.Capacitor,A=C&&C.Plugins&&C.Plugins.App;
+  if(!A||!A.addListener)return;
+  A.addListener('backButton',function(){
+    if(document.body.classList.contains('buyer')){exitBuyer();return;}
+    if(history.length>1)history.back();else if(A.exitApp)A.exitApp();
+  });
+})();
 function rfBtn(label,act,id,cls){
   var b=document.createElement('button');b.textContent=label;b.dataset.act=act;b.dataset.id=id;
   if(cls)b.className=cls;
@@ -1620,7 +1639,7 @@ $('codeBtn').addEventListener('click',function(){
   $('codeIn').value='';showMsg('mCode','');$('codeOv').classList.add('on');
   setTimeout(function(){$('codeIn').focus();},50);
 });
-$('codeNo').addEventListener('click',function(){$('codeOv').classList.remove('on');if(sess&&!adminOK&&!document.body.classList.contains('buyer'))showModePick();});
+$('codeNo').addEventListener('click',function(){$('codeOv').classList.remove('on');if(!document.body.classList.contains('buyer')&&(document.body.classList.contains('demo')||(sess&&!adminOK)))showModePick();});
 $('codeYes').addEventListener('click',async function(){
   var err=CLOUD?await enterBuyerCloud($('codeIn').value):enterBuyer($('codeIn').value);
   if(err){showMsg('mCode',err,'er');return;}
@@ -3784,9 +3803,14 @@ function enterDemo(){
   init();
   renderPartBtn();
 }
+/* Participante: primero pide el código que le dio el organizador (sin código solo ve la vista de ejemplo) */
 $('modePt').addEventListener('click',function(){
   $('modeOv').classList.remove('on');
   enterDemo();
+  $('codeIn').value='';
+  showMsg('mCode','Escribe el código que te dio el organizador para elegir tus números.');
+  $('codeOv').classList.add('on');
+  setTimeout(function(){$('codeIn').focus();},50);
 });
 async function startAdmin(){
   if(!CLOUD){$('invSec').style.display='';$('invHint').style.display='';$('saleSec').style.display='none';loadIdx();bootRaffle();loadDB();init();return;}
@@ -3880,7 +3904,7 @@ function ptRender(info){
       invalid:['Enlace no válido','Este enlace no existe. Pide uno nuevo al organizador.'],
       expired:['Enlace vencido','Este enlace ya expiró. Pide uno nuevo al organizador.'],
       used:['Enlace ya utilizado','Con este enlace ya se registró una participación.'],
-      closed:['Registro cerrado','El sorteo ya comenzó y no se pueden registrar más participaciones.']
+      closed:['Registro cerrado','Este sorteo ya comenzó o tiene resultados guardados. Espera a que el organizador reinicie el sorteo para vender la siguiente ronda y te dé un código nuevo.']
     }[info.reason]||['No disponible','Pide un enlace nuevo al organizador.'];
     ptMessage(m[0],m[1]);
     return;

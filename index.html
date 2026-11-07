@@ -442,6 +442,11 @@ button.danger-btn{background:linear-gradient(180deg,#c9556a,#9c2f44);color:#fff;
 .pg .cell:not(.tkp){background:linear-gradient(180deg,#3a4250,#2c333d);color:#e9e6df;border:1px solid #4a5260;font-weight:700}
 .pg .cell.sel,.cell.sel{border:2px solid #f0cf7e!important}
 .cell.mine{outline:3px solid #f0cf7e!important}
+/* Cuadrícula del comprador: libres en verde, ocupados en rojo con rayado y tachado */
+#pg .cell:not(.tkp){background:linear-gradient(180deg,#eafbf1,#c4eed6)!important;color:#0b4d2a!important;border:2px solid #2e9e5b!important;font-weight:700!important;opacity:1!important;box-shadow:0 0 10px rgba(46,158,91,.4)!important;cursor:pointer}
+#pg .cell.tkp{background:repeating-linear-gradient(45deg,#4a1d25 0 6px,#2f1218 6px 12px)!important;color:#ff9aa8!important;border:2px solid #b8414f!important;opacity:1!important;text-decoration:line-through;font-weight:700!important;box-shadow:none!important;cursor:not-allowed}
+#pg .cell.sel{outline:3px solid #ffb020!important;outline-offset:1px}
+#pg .cell.mine{outline:3px solid #ff2e88!important;outline-offset:-3px}
 </style>
 </head>
 <body>
